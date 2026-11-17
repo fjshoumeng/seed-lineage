@@ -129,7 +129,7 @@ description: |
 |:--|:--|:--|
 | ① 量形状 | `scripts/scan.py` → `state/regularity.json` + `state/先天锚-<版本>.json` | `工具/scan-obsidian.mjs` → `基座/先天-obsidian.json`（另有 `scan-tools.mjs` 量后天工具） |
 | ② 长描述 | `scripts/gen_innate.py` → `技能/dsh-innate-*`（11 份） | `工具/live-obsidian.mjs` → `技能/obsidian-innate/SKILL.md`（1 份，方向在文内按节分） |
-| ②′ 名片规律的唯一来源 | 写在各先天 skill 的「判据」节里 | `工具/obsidian-cards.mjs`（`CARDS`：规律一句话 + 原料算式，投影与校验共用一份） |
+| ②′ 规律与判据的唯一来源 | `gen_innate.py` 里的 `directions()`：每个方向一条「规律一句话 + 判据行」，名片由 `live.py` 照 skill 正文写出的地址自己长出来 | `工具/obsidian-cards.mjs`：五张面的「规律一句话 + 原料算式」，投影与校验都 import 这同一份 |
 | ③ 组身世树 | `scripts/live.py` → `seed.json` + 投影 | `工具/seed-obsidian.mjs` → `基座/seed-obsidian.json` + `基座/seed-obsidian.md` |
 | ④ 校验不变量 | `scripts/verify.py`（七组） | `工具/verify-obsidian.mjs`（四组，红了退出码 1） |
 | 名片库 | `名片/先天-*.md` 10 张 | `名片/先天-obsidian-*.md` 5 张（布局 / 表达 / 加载 / 插件 / 内容形制） |
