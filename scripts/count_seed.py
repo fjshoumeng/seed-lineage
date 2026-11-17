@@ -189,9 +189,14 @@ def main(argv) -> int:
     print("── 口径 A · 名片库文件数 " + "-" * 40)
     print("  数什么：名片库这一层里以 .md 结尾的实体文件，一个方向一张")
     print("  从哪读：%s" % paths.CARD_DIR)
-    print("  结果  ：%d 张" % r["A_名片库文件数"])
-    if r["A_文件清单"]:
-        print("  清单  ：" + "、".join(r["A_文件清单"]))
+    if not os.path.isdir(paths.CARD_DIR):
+        print("  结果  ：0 张 —— 但这个 0 不是「没有名片」，是这个目录不存在")
+        print("  名片库由 paths.py 解析（来源：%s），解析不到时本口径无处可读。" % paths.ASSETS_SRC)
+        print("  要读别处的名片库：先设 DSH_ASSETS 指向含有 名片/ 的那一层，再跑本脚本")
+    else:
+        print("  结果  ：%d 张" % r["A_名片库文件数"])
+        if r["A_文件清单"]:
+            print("  清单  ：" + "、".join(r["A_文件清单"]))
     print("")
     print("── 口径 B · 带锚的名片条目数 " + "-" * 34)
     print("  数什么：种子 seed.json 里，名片条目的 锚 列表非空的条数")
@@ -214,8 +219,11 @@ def main(argv) -> int:
     print("  E · SKILL.md frontmatter 的 looks_at 条数")
     print("      数什么：每份 SKILL.md 的 card.looks_at 逐份相加，不读种子")
     print("      从哪读：%s/*/SKILL.md" % paths.SKILL_ROOT)
-    print("      结果  ：%d 条（共 %d 份 SKILL.md，其中 %d 份带 looks_at）"
-          % (r["E_looks_at_条数"], r["E_SKILL_md_份数"], r["E_带_looks_at_的份数"]))
+    if not os.path.isdir(paths.SKILL_ROOT):
+        print("      结果  ：0 条 —— 这个 0 是 skill 根不存在，不是「没有 looks_at」")
+    else:
+        print("      结果  ：%d 条（共 %d 份 SKILL.md，其中 %d 份带 looks_at）"
+              % (r["E_looks_at_条数"], r["E_SKILL_md_份数"], r["E_带_looks_at_的份数"]))
     print("  F · birth 条数")
     print("      数什么：种子里 birth.at 非空的节点数")
     print("      结果  ：%d 条（节点总数 %d：先天 %d + 后天全部节点）"
@@ -234,6 +242,9 @@ def main(argv) -> int:
     print("── 一句话 ─────────────────────────────" + "-" * 10)
     print("  名片库文件 %d 张 ／ 带锚的名片条目 %d 条 ／ 锚 %d 条 ／ 去重对象 %d 个"
           % (r["A_名片库文件数"], r["B_带锚的名片条目数"], r["C_锚条数"], r["D_去重对象数"]))
+    if not os.path.isdir(paths.CARD_DIR) or not os.path.isdir(paths.SKILL_ROOT):
+        print("  注意：名片库或 skill 根在这台机器上解析不到，A / E 两个口径为 0 是「读不到」不是「没有」。")
+        print("        先跑 python paths.py 看地址解析对不对。")
     print("  这四个数是四种数法，别横着比。要比就同一个脚本跑两次比。")
     return 0
 
