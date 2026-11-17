@@ -31,13 +31,14 @@
 | 对象 | 量什么形状 | 判据换到哪 |
 |:--|:--|:--|
 | DSH 本体（`app.asar`） | 包、入口、路由、预设、槽位 | `package.json` 的 main/exports、路由 kind |
+| 外部桌面程序（Obsidian） | 程序布局、两份 asar 头、库里原生件形制 | 安装包载荷的 PE 头、asar 头形制、`.md`/`.canvas`/`.base`/`.excalidraw.md` |
 | `jar` / `war` | 类、清单、依赖、入口类 | `META-INF/MANIFEST.MF` 的 Main-Class |
 | npm 依赖树 | 顶层依赖、传递依赖、版本收敛 | `package-lock.json` 的 resolved / integrity |
 | docker 镜像层 | 层、层里改了什么、谁覆盖谁 | 层的 digest 与父子指针 |
 | 一个代码仓库 | 模块图、导入关系、谁引谁 | import / require 的静态解析结果 |
 
-**判据变了，方法没变。** 今天只把 DSH 这一条真跑通了 —— 所以这份文档里的数字都是 DSH 的数。
-那不是「只能用在 DSH 上」，那是「这一条我通过实测了」。
+**判据变了，方法没变。** 真跑通的有两条：DSH 一条，Obsidian 一条（见第四节末「第二个范例」）。
+其余的 jar / npm / docker / 模块图仍是方向。那不是「只能用在这两个对象上」，那是「这两条我通过实测了」。
 
 **你这份实现是范例，不是答案。** 它到哪，取决于我们的思想到哪。想想不到的，不是做不到，是还没想到。
 
@@ -109,6 +110,32 @@
 
 **这些数字只证明流程走通了。** 不证明你的机器也长这样（你的数不一样才是对的），
 不证明这是标准答案（换对象判据全换），不证明这是上限（见第六节）。
+
+#### 第二个范例：换了本体、换了语言，照样成立
+
+上面那一节只有一条链撑着。「判据变了、方法没变」这句话，一条链证明不了 —— 它是主张，不是证据。
+
+现在有第二条：**Obsidian（一个外部程序，跟 DSH 无关）身上，同一套四个动作真跑通了一遍**，
+量的是它自己的本体，写的是 Node 而不是 Python。
+
+| 四个动作 | DSH 那条链（Python） | Obsidian 那条链（Node） |
+|:--|:--|:--|
+| 量形状 | `scan.py` | `工具/scan-obsidian.mjs` |
+| 长描述 | `gen_innate.py` → 11 份先天 skill | `工具/live-obsidian.mjs` → 1 份 `obsidian-innate` |
+| 组身世树 | `live.py` → `seed.json` | `工具/seed-obsidian.mjs` → `基座/seed-obsidian.json` + `.md` |
+| 校验不变量 | `verify.py` | `工具/verify-obsidian.mjs`（实测：全绿 19 项，退出码 0） |
+| 名片 | 10 张 | 5 张（布局 / 表达 / 加载 / 插件 / 内容形制） |
+
+变的是**本体**（`app.asar` → Obsidian 程序目录）、**语言**（Python → Node）、
+**判据**（`package.json` 的 main/exports → 程序布局、asar 头形制、库里四种原生件形制）。
+不变的是那四个动作的顺序，和「先天 → skill → 名片 → 种子 → 后天件 → 再投」这个环。
+
+所以这不是「一个只认识 DSH 的工具」，是**一套能反复长出系统的方法** —— 而且它在第二个对象上
+连缺什么都一起长出来了：那条链还没有查询器、地址仍写死在五个脚本里、也没有年轮账。
+缺件写清楚反而是更强的证据：方法真能换本体，空白自己站在树上。
+
+至于 `jar` / npm / docker / 模块图 —— 它们**仍然是方向，不是已实现**。第二个真实例证明的是
+「方法能换本体」，不是「任意本体都自动成立」；能不能长，取决于它的形状能不能被量出来（尺子贴着对象造）。
 
 ### 五 · 怎么把它展示出来
 
@@ -354,8 +381,8 @@ export DSH_ORIGIN=/你的/dsh/目录
 - **跨 harness 的判据要重写。** 现在的判据长在 DSH 的形状上（`app.asar` + `runtime.json`、`package.json` 的 main/exports、
   路由按 kind 分表）。换一套宿主，本体形态变了，判据得按新形态重写 —— 方法和七环能照搬，判定那几行不能。
   这不是缺陷，是这类能力的固有形状：**尺子必须贴着对象造。**
-- **这一份只把一条路跑通了。** 第六节第三层（jar / npm / docker / 模块图）是方向，不是已交付。
-  别拿它当「已经支持任意对象」用。
+- **跑通的是两条路，不是任意对象。** DSH 本体与 Obsidian 程序各一条（见第四节末）；第六节第三层（jar / npm / docker / 模块图）仍是方向，不是已交付。
+  别拿它当「已经支持任意对象」用。第二条链也带着缺件：没有查询器、地址写死在五个脚本里、没有年轮账。
 
 **风险：**
 
@@ -406,13 +433,15 @@ These four actions **are not tied to DSH**. The criteria change, because "necess
 | Object | What you measure | Where the criteria move to |
 |:--|:--|:--|
 | DSH install (`app.asar`) | packages, entries, routes, presets, slots | `package.json` main/exports, route kind |
+| external desktop app (Obsidian) | program layout, asar headers, native file formats | PE header of the payload, asar header shape, the four native formats in a vault |
 | `jar` / `war` | classes, manifest, dependencies, entry class | `META-INF/MANIFEST.MF` Main-Class |
 | npm dependency tree | direct deps, transitive deps, version convergence | `package-lock.json` resolved / integrity |
 | docker image layers | layers, what each changed, which overrides which | layer digest and parent pointers |
 | a code repository | module graph, imports, who references whom | static resolution of import / require |
 
-**The criteria change; the method does not.** Only the DSH path is actually proven today — that is why every
-number in this README is a DSH number. It does not mean "DSH only"; it means "this one path is measured".
+**The criteria change; the method does not.** Two paths are actually proven: DSH, and Obsidian
+(see the end of §4). The rest — jar / npm / docker / module graph — are still directions. That does not
+mean "these two objects only"; it means "these two paths are measured".
 
 **This implementation is an example, not the answer.** How far it reaches depends on how far our thinking reaches.
 What we have not thought of is not impossible — it is just not thought of yet.
@@ -486,6 +515,35 @@ verify     live.py --check 0 problems; verify.py 97 checks green; second gen_inn
 
 That set only proves the pipeline runs end to end. Your install will yield different numbers — that is correct.
 It is not the reference answer (different object, different criteria), and it is not the ceiling (see next).
+
+#### A second example: new object, new language, same structure
+
+One chain proves one chain. The sentence "the criteria change, the method does not" needs a second object
+to be more than a claim — so here it is: **the same four actions ran, end to end, on Obsidian**
+(an external program that has nothing to do with DSH), this time written in Node instead of Python,
+measuring its own object.
+
+| The four actions | The DSH chain (Python) | The Obsidian chain (Node) |
+|:--|:--|:--|
+| measure the shape | `scan.py` | `tools/scan-obsidian.mjs` |
+| grow descriptions | `gen_innate.py` → 11 innate skills | `tools/live-obsidian.mjs` → 1 skill, `obsidian-innate` |
+| build the lineage | `live.py` → `seed.json` | `tools/seed-obsidian.mjs` → `base/seed-obsidian.json` + `.md` |
+| verify invariants | `verify.py` | `tools/verify-obsidian.mjs` (measured: 19 checks green, exit 0) |
+| cards | 10 | 5 (layout / expression / loading / plugin / content format) |
+
+What changed: the **object** (`app.asar` → the Obsidian program directory), the **language**
+(Python → Node), the **criteria** (`package.json` main/exports → PE header of the payload, asar header
+shape, the four native file formats in a vault). What did not change: the order of the four actions and
+the loop innate → skill → card → seed → acquired → re-project.
+
+So this is not "a tool that only knows DSH" — it is **a method that can grow a system repeatedly**.
+And on the second object it also grew its own gaps: that chain has no query tool yet, its root path is
+still hard-coded in five scripts, and there is no tree-ring ledger. Naming the gaps is the stronger
+evidence — the method really transfers, and the empty places show up on the tree by themselves.
+
+`jar` / npm / docker / module graph remain **directions, not shipped**. A second real example proves
+"the method transfers to another object", not "any object works automatically". Whether one grows depends
+on whether its shape can be measured — the ruler is built against the object.
 
 ### 5 · How to show it
 

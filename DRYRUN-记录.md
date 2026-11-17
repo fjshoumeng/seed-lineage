@@ -109,4 +109,34 @@ https://github.com/fjshoumeng/seed-lineage   公开（PUBLIC），默认分支 m
 
 还没做：`npx skills` 装到 `~/.agents` 之后没在本机当技能跑过一遍（只有发布器那步同步了一份副本）。
 
+---
+
+## 追记（2026-11-18 · 补第二个真实例）
+
+改动范围：只动文档正文 —— `SKILL.md` 新增「第二个范例：换了本体、换了语言，照样长出完整结构」一节
+（位于「这份技能要压平的是什么麻烦」与「范例：它跑在 DSH 上」之间），`README.md` 中英各加对应一小节，
+并同步三处「只跑通一条」的说法与两处判据对照表。`scripts/` 下**没有改任何脚本**，
+Obsidian 的工具脚本**没有搬进 `scripts/`**（它是例子，不是零件）；`LICENSE` 未动；`description` 未动。
+
+dry-run（同一套 Windows 三件套依然有效：`PYTHONUTF8=1`、前置 `which.cmd`、显式 `--github-user fjshoumeng`）：
+
+```
+python publish_skill.py D:\DSH-本地插件包\外部技能\seed-lineage --dry-run --github-user fjshoumeng --repo-name seed-lineage
+✅ SKILL.md 验证通过 (name: seed-lineage)   ✅ gh CLI 已就绪   ✅ GitHub 用户: fjshoumeng
+✅ GitHub 仓库名: seed-lineage              ✅ LICENSE 已存在  ✅ README.md 已存在
+✅ README 质量检查通过                      🏁 Dry run 完成，退出码 0
+```
+
+校验链状态（本次改动前后逐项一致，**没有因为这次改动新增任何红项**）：
+
+| 链 | 项数 | 未通过 | 本次影响 |
+|:--|--:|--:|:--|
+| 发布版 `scripts/verify.py` | 273 | 5 | 0（5 条与上表同为改前既有：种子被重投 + 4 张名片 seen_at） |
+| 本机 `工具/dsh-skillmap/verify.py` | 365 | 5 | 0（同一批） |
+
+改前基线两份完整输出留存在工作区 `baseline-发布版-verify.txt` / `baseline-本机-verify.txt`，可逐行比对。
+
+一处操作留痕（诚实记）：提交前工作区里已有**另一件活的**未提交改动（`SKILL.md` 「方法类判据=有没有一句总述」那 12 行）。
+本次把它从提交里排除（只提交本任务自己的改动），提交后原样放回工作区 —— 那条改动仍未提交，归它自己的活收口。
+
 
