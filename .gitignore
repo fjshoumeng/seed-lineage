@@ -1,0 +1,8 @@
+# 运行时量出来的中间账：每台机器不一样，且带本机绝对路径 —— 不进仓库
+state/
+_assets/
+assets/
+
+# Python 缓存
+__pycache__/
+*.pyc

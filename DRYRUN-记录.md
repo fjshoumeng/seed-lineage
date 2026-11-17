@@ -1,0 +1,91 @@
+# 发布检查记录（dry-run）
+
+日期：2026-11-17
+对象：`D:\DSH-本地插件包\外部技能\seed-growth`
+工具：`qiaomu-skill-publisher-main/scripts/publish_skill.py --dry-run`
+**只做 --dry-run，未发布。** 公开还是私有要老板拍板。
+
+## 最终结果
+
+```
+🔍 检查 Skill: D:\DSH-本地插件包\外部技能\seed-growth
+
+✅ SKILL.md 验证通过 (name: seed-growth)
+✅ gh CLI 已就绪
+✅ GitHub 用户: fjshoumeng
+✅ GitHub 仓库名: seed-growth
+✅ LICENSE 已存在
+✅ README.md 已存在
+✅ README 质量检查通过
+
+🏁 Dry run 完成。实际发布命令:
+   python3 ...publish_skill.py D:\DSH-本地插件包\外部技能\seed-growth \
+     --github-user fjshoumeng --repo-name seed-growth
+```
+
+退出码 0。
+
+## 提示过又被修掉的问题（按出现顺序）
+
+| # | 报错 / 现象 | 根因 | 修法 |
+|--:|:--|:--|:--|
+| 1 | `UnicodeDecodeError: 'gbk' codec can't decode byte 0xac` | 发布脚本用 `open(path)` 不指定编码，在 Windows 上默认 GBK；SKILL.md 是 UTF-8 中文 | 不改脚本（不是我们的文件），改用 `PYTHONUTF8=1` 运行。**记一笔：Windows 用户跑这个发布器都得带这个环境变量** |
+| 2 | `[错误] 未找到 gh CLI` | 发布器用 `which gh` 判断，`which` 是 Unix 命令，Windows 上没有 | 在临时目录放一个 `which.cmd`（内容是 `where %1`）并前置到 PATH。`gh` 本身是装好的、已登录 `fjshoumeng` |
+| 3 | `[错误] 无法获取 GitHub 用户名` | 上一行里的 `gh api user --jq '.login'` 在 Windows 下走 sh 语义拿不到输出；且目录没有 git origin | 显式传 `--github-user fjshoumeng` |
+| 4 | README 是**脚本自动生成**的通用模板 | 目录里没有 README，发布器就套模板，而那个模板讲的是"怎么发布 skill"，与本技能内容无关；还挂着别人的版权（向阳乔木 / joeseesun） | **重写 README**：价值主张 / 首屏证据 / 前置条件 checkbox / 完整安装与五步跑法 / 使用示例 / 风险限制 / 常见问题（10 条）/ 致谢 / 中英双语。重写后 `✅ README.md 已存在`，质量检查通过 |
+| 5 | LICENSE 版权人写成 `DSH Agent` | 发布器按参数填的占位 | 改成 `fjshoumeng`（账号名），与 README 末尾一致 |
+
+## 硬规则核对
+
+- **`description` 用 `|` 块标量** —— 是。里面含冒号、顿号、破折号、`→` 箭头，都在块标量里安全。
+- **README 无占位** —— 无 `TODO`、无 `特性 1`、无 `[问题 N]`、无 `your-org/your-repo`。
+  这些正是发布器 `check_readme_quality()` 会拦的 10 个正则，逐个比对过。
+- **README 七要素** —— 价值主张 ✅ / 首屏证据（实测数字表）✅ / 前置条件 checkbox ✅ /
+  完整安装步骤（含验证命令）✅ / 自然语言使用示例 ✅ / 风险与限制 ✅ / 常见问题 ≥3 条（实际 10 条）✅ /
+  致谢（qiaomu-skill-publisher + 原始工具链）✅
+
+## 反向验证（确认校验真的会拦，不是摆设）
+
+另建一个临时目录，把 `description` 写成 **非块标量 + 含冒号 + 含双引号**：
+
+```yaml
+description: 教一台机器从本体里长出种子: 冒号没引号，还有"双引号"
+```
+
+结果：
+
+```
+❌ 验证失败:
+   - YAML 语法错误: mapping values are not allowed here
+   常见原因: description 含未转义的引号或特殊字符
+   修复方法: 改用 | 块标量格式:
+     description: |
+       ...
+```
+
+退出码 1。→ **校验是有效的，本技能能过不是因为它没查。**
+
+## 边界
+
+- 没有 `--private`，没有推仓库，没有 `npx skills` 真装验证。
+- 公开 / 私有、仓库名、是否同步到 `~/.agents/skills`，都等老板定。
+
+---
+
+## 后续（2026-11-17 追记）
+
+**上面全文里的 `seed-growth` 是历史记录的原样，不改。** 那个名字已弃用。
+
+- 目录已改名：`外部技能\seed-growth` → `外部技能\seed-lineage`
+- SKILL.md `name:` → `seed-lineage`，正文自称同步
+- README 标题 / 正文 / 安装命令 → `fjshoumeng/seed-lineage`，`ls ~/.agents/skills/seed-lineage/`
+- GitHub 仓库名 → `seed-lineage`，公开发布
+- LICENSE 版权人不变（`fjshoumeng`）
+
+改名同时降级了正文里的具体量数：文件数 / 包数 / 预设行数这类「我这一台机器的数」不再罗列，
+只保留「走完四步、8 份 skill、97 项校验全过」证明流程走通。理由同上文记的那条 ——
+写死的数就是文档开始假的那一刻。
+
+上面第 32 行、第 34 行记的两个 Windows 坑**依然有效**，本次发布照样要带：
+`PYTHONUTF8=1`、前置 `which.cmd`、显式 `--github-user fjshoumeng`。
+
