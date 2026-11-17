@@ -60,7 +60,7 @@
 - **改一处不知道会影响哪里。** → 锚点先告诉你谁盯着它；改完，盯着它的那份描述会红。拿到的是提醒，不是事后才发现。
 - **想知道某某东西到底归谁管。** → `find.cjs <关键词>` 四段命中：归谁管、盯的哪个路径、哪份技能写过它、下一步读哪个文件哪一节。30 毫秒，不搜盘。
 - **想给新来的人一份能看的架构说明。** → 先天 skill 本身就是按方向组织好的架构说明，而且跟着版本自动更新。
-- **东西太多，分不清哪些还在用、哪些已经死了。** → 每个件带时刻与指纹，数据全在种子里（见第五节第二层，查询还没写）。
+- **东西太多，分不清哪些还在用、哪些已经死了。** → 每个件带时刻与指纹，数据全在种子里（见第六节第二层，查询还没写）。
 - **一份索引换台机器就得重写。** → 地址三级解析、数字从本体量、校验里没有你的数。换机器量出别的数是对的。
 
 ### 三 · 它能解决什么问题 —— agent 的问题
@@ -101,9 +101,40 @@
 | `verify.py` | `97 项校验，全部通过` |
 
 **这些数字只证明流程走通了。** 不证明你的机器也长这样（你的数不一样才是对的），
-不证明这是标准答案（换对象判据全换），不证明这是上限（见下一节）。
+不证明这是标准答案（换对象判据全换），不证明这是上限（见第六节）。
 
-### 五 · 能长到多远
+### 五 · 怎么把它展示出来
+
+种子长出来只是一半，另一半是**让人看见**。这一条不规定格式，只讲方法。
+
+**展示什么**：展示的是「树 + 边界」—— 有哪些件、谁生谁、盯的什么路径、哪些地方还是空白。
+目的只有一个：让看的人一眼知道「这个系统长成什么样、什么地方没有东西」。
+
+**拿哪份数据展示**：就是 `seed.json`。它是结构化的（节点 + 父 + 依据 + 状态 + 锚），
+天然适合渲染，**不需要再单独维护一份展示数据 —— 种子里有什么就能展示什么。**
+另外 `live.py --check` 的问题清单就是「边界」那一份，红的地方就是空的地方。
+
+**怎么呈现**（按推荐顺序）：
+
+1. **一份可点击的 HTML 页面**（首选）—— 树按父子关系展开，每个节点能点开看到：
+   它是谁生的、依据哪张名片、盯着哪些文件、指纹对没对上。给不熟终端的人看，打开就懂，
+   想查什么点进去查，而不是看着一张图和它猜。
+2. **结构化数据**（给 agent 看）—— `seed.json` 本身就是可查的，agent 直接读，不需要页面。
+3. **终端里的树形文本**（快速瞄一眼，最短的路）。
+4. **明确不要**：截一张静态图片当展示。图片不能点、不随种子变化。
+
+**为什么必须是可点的**：**能点开的才算展示，图片是死的。** 一张截图在发布那天就开始假了 ——
+这和我们想解决的那个问题是同一件事（文档过期没人知道）。所以展示本身也得是活的：
+**从 `seed.json` 现生成，随时能重新生成一遍。**
+
+**用什么形式取决于给谁看**：给 agent 看的用结构化数据，给人看的用可点的页面。
+
+我们这台机器上，那样一个页面点开会展开：**11 个先天件 · 65 个后天件 · 226 个锚点 · 12 个空白节点**。
+空白节点是 `插件\` 下有目录、却还没有任何一句话描述它的那 12 个 —— 它们不会凭空消失，也不会被补成假的。
+
+种子的价值一半在「记得住」，一半在「看得见」—— **看得见的边界，别人才知道下一步往哪长。**
+
+### 六 · 能长到多远
 
 **上限是思想的上限，不是实际上限。** 今天想到的能做到；想不到的不是做不到，是还没想到。
 
@@ -248,7 +279,7 @@ export DSH_ORIGIN=/你的/dsh/目录
 - **跨 harness 的判据要重写。** 现在的判据长在 DSH 的形状上（`app.asar` + `runtime.json`、`package.json` 的 main/exports、
   路由按 kind 分表）。换一套宿主，本体形态变了，判据得按新形态重写 —— 方法和七环能照搬，判定那几行不能。
   这不是缺陷，是这类能力的固有形状：**尺子必须贴着对象造。**
-- **这一份只把一条路跑通了。** 第五节第三层（jar / npm / docker / 模块图）是方向，不是已交付。
+- **这一份只把一条路跑通了。** 第六节第三层（jar / npm / docker / 模块图）是方向，不是已交付。
   别拿它当「已经支持任意对象」用。
 
 **风险：**
@@ -286,7 +317,6 @@ upkeep, because it flips red the moment its object changes.
 **This implementation runs on DSH. It is an example — not a product, not the reference answer, and not the ceiling.**
 
 ### 1 · This is a capability, not a product
-
 A seed is not a doc template. It is four actions:
 
 ```
@@ -331,7 +361,7 @@ and never tells you. A grown one flips red the moment its object changes.
 - **Changed one place, unsure what it affects.** → the anchors first tell you who watches it; after the change, that description flips red.
 - **Which package provides this service, which plugin registered that route.** → innate skills and cards list them by direction; criteria read declarations, not filenames.
 - **Want a readable architecture note for the next person.** → the innate skills *are* that note, organised by direction, and they update with the version.
-- **Too many things; which are alive and which are dead.** → every artifact carries a timestamp and a fingerprint; the data is already in the seed (see §5, second layer — the queries are not written).
+- **Too many things; which are alive and which are dead.** → every artifact carries a timestamp and a fingerprint; the data is already in the seed (see §6, second layer — the queries are not written).
 - **One index per machine, not one index thrown away per machine.** → three-level address resolution, numbers measured, no numbers of mine in the verifier.
 
 ### 3 · Problems it solves — for agents
@@ -375,7 +405,41 @@ verify     live.py --check 0 problems; verify.py 97 checks green; second gen_inn
 That set only proves the pipeline runs end to end. Your install will yield different numbers — that is correct.
 It is not the reference answer (different object, different criteria), and it is not the ceiling (see next).
 
-### 5 · How far it can grow
+### 5 · How to show it
+
+Growing the seed is half the job; **making it visible** is the other half. This section fixes no format, only the method.
+
+**What to show**: the tree plus its edges — what exists, who begat whom, which paths are watched, and where
+nothing exists yet. One purpose: a reader should see at a glance what the system grew into, and where it is empty.
+
+**Which data to show it from**: `seed.json`. It is already structured (node + parent + 依据 + state + anchors),
+so it renders directly — **no separate presentation data to maintain; whatever is in the seed can be shown.**
+The problem list from `live.py --check` is the "edges" half: red marks are empty places.
+
+**Ways it can be presented** (in order of preference):
+
+1. **A clickable HTML page** (preferred) — the tree expands by parent/child, and each node opens to show
+   who begat it, which card it followed, which files it watches, and whether the fingerprint still matches.
+   Anyone who does not live in a terminal understands it on open, and can click into what they want instead
+   of squinting at a picture.
+2. **Structured data** (for agents) — `seed.json` is already queryable; an agent reads it directly, no page needed.
+3. **Tree text in a terminal** (a quick glance; the shortest path).
+4. **Deliberately not**: a static screenshot as the showcase. It cannot be clicked and does not follow the seed.
+
+**Why it must be clickable**: **only what you can open counts as a showcase; a picture is dead.** A screenshot
+starts lying on the day it ships — which is the very problem this project exists to solve (stale docs nobody
+notices). So the showcase has to be live too: **generated from `seed.json` on demand, regenerable at any time.**
+
+**The form follows the audience**: structured data for agents, a clickable page for people.
+
+On our machine, that page opens to **11 innate artifacts · 65 acquired artifacts · 226 anchors · 12 blank nodes**.
+The blank nodes are the 12 directories under `插件\` that no sentence describes yet — they do not disappear,
+and they are not padded with placeholders.
+
+Half the value of a seed is that it *remembers*; the other half is that it *is visible* —
+**a visible edge is what tells the next person where to grow.**
+
+### 6 · How far it can grow
 
 **The ceiling is the ceiling of thought, not of what is possible.**
 
@@ -464,7 +528,7 @@ python verify.py       # 4 verify the whole chain
   main/exports, routes split by kind). On another host the matter looks different and the criteria must be
   rewritten — the method and the seven links port, the deciding lines do not. This is not a defect; it is the
   inherent shape of the capability: **the ruler has to be built against the object.**
-- **Only one path is proven here.** Layer 3 in §5 (jar / npm / docker / module graph) is a direction, not a
+- **Only one path is proven here.** Layer 3 in §6 (jar / npm / docker / module graph) is a direction, not a
   shipped feature. Do not read this as "works on arbitrary objects".
 
 **Risks:** read-only on the installation; writes only under `技能/`, `名片/`, and the state directory; no network;
