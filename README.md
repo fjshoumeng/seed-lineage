@@ -86,12 +86,18 @@
 量出来   文件 21,682（unpacked 1,678 在外）／预设 4 份 112 行／升级指引 14 个目录
 先天件   11 份（dsh-innate 入口 + 10 个方向），同一枚指纹 89de2e2de843
 先天名片 10 张（布局 / 插件 / 服务 / 预设 / 端口 / 槽位 / 窗口 / 文档 / 自带skill / 表达）
-后天线   65 个后天件，每个带 birth 五件套
-锚点     88 份 skill 长出名片段，合计 226 个 looks_at（216 file + 10 dir，去重 179 个对象）
-时刻     89 条 birth.at，最早 2026-10-09，最新 2026-11-17
+后天线   65 个顶层后天件，往下共 77 个节点，每个带 birth 五件套
+锚点     名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚 227 条 ／ 去重对象 178 个
+时刻     88 条 birth.at，最早 2026-10-09，最新 2026-11-17
 年轮     5 圈，全在同一枚指纹下
 校验     live.py --check 0 个问题；verify.py 97 项全过；二轮 gen_innate 写出 0 份（收敛）
 ```
+
+> **上面「锚点」那行的四个数请一律用 `python count_seed.py` 复算，不要手抄、不要拿一个口径的数去对另一个口径的数。**
+> 这四个数是四种数法：名片库文件（磁盘上的 .md）／带锚的名片条目（种子里锚列表非空的条数）／
+> 锚条数（逐条相加，同一个文件被两个件盯就算两条）／去重对象（path 去重后）。
+> 还有一个第六个数「SKILL.md frontmatter 的 looks_at 条数」直接读文件、不读种子，它和种子口径**不是同一份数据**，
+> 差多少、差在哪个节点，`count_seed.py` 会逐条打出来。口径写死在那个脚本里，改了数就跟着变。
 
 | 步骤 | 输出 |
 |:--|:--|
@@ -129,8 +135,69 @@
 
 **用什么形式取决于给谁看**：给 agent 看的用结构化数据，给人看的用可点的页面。
 
-我们这台机器上，那样一个页面点开会展开：**11 个先天件 · 65 个后天件 · 226 个锚点 · 12 个空白节点**。
-空白节点是 `插件\` 下有目录、却还没有任何一句话描述它的那 12 个 —— 它们不会凭空消失，也不会被补成假的。
+#### 生成那张页面：`render_seed.py`
+
+这一条不是说法，是一条命令。`scripts/render_seed.py` 把 `seed.json` 现生成**一个自包含的 HTML**：
+
+```bash
+cd scripts
+python render_seed.py                      # 默认取 paths.py 解析到的种子 → 当前目录 seed-tree.html
+python render_seed.py <seed.json>          # 指定种子
+python render_seed.py <seed.json> -o out.html
+python render_seed.py --print-path         # 只打印默认种子在哪
+```
+
+生成完用浏览器打开那个文件即可 —— **单文件、不引用任何外网资源（没有 CDN、没有字体、没有图片）**，
+双击就能开，断网也能开。
+
+页面里有什么（全部从 `seed.json` 现算，没有一个节点名是写死的）：
+
+| 位置 | 内容 |
+|:--|:--|
+| 顶部统计 | 节点数 / 名片条目数 / 锚条数 / 去重对象数 / 断锚数（外加先天与后天各几个、空白几个） |
+| 树 | 按 `birth.from` 展开 —— `from` 才是父亲；先天在上、后天在下；`from` 指不到的单列「父亲找不到」 |
+| 详情 | 点任一节点：name / 短名 / birth 四行（at / from / 依据 / act）/ 它的名片与每条锚（指向的路径在不在）/ 指纹与 seen_at |
+| 边界 | 锚指向不存在的东西 → 标红并单列「断锚」表；没有锚或没有 birth 的件单列「空白」表 |
+
+它同时把「断锚」和「空白」显示在树里（节点名后面挂红标），点进去能看到是哪一个锚断了。
+界面上还有过滤框与全部展开/收起，节点多的时候不至于翻半天。
+
+**这一张页面每次从 `seed.json` 现生成 —— 种子一变，重跑一遍就是新的。这正是它和静态截图的区别：**
+截图不能点、也不知道自己已经过期；这个页面点得开，而且只要重跑一次命令就追上当下。
+
+幂等：同一份 `seed.json` 跑两遍，输出逐字节一致（正文里不含任何时间戳，只在文件末尾的注释里写生成器与来源）。
+
+我们这台机器上，用上面第一条命令生成的那一页，顶部统计是
+**节点 88（先天 11 · 后天 77）／名片条目 88／锚 227 条（去重 178 个对象）／断锚 0／空白 0**。
+
+> 这些数字一律用 `python count_seed.py`（同一目录下）复算，别手抄，也别拿一个口径的数去对另一个口径的数。
+> 四个口径数的是什么、差在哪一条，那个脚本会逐条打出来 —— 见下一节。
+
+#### 口径：同一件事有几种数法
+
+「锚点 226 还是 227」这种分歧不是谁错，是把两种数法混着比。`scripts/count_seed.py`
+把每个口径怎么数写死在代码里，跑一次就是一份确切数字：
+
+```bash
+python count_seed.py           # 人看的：每个口径数什么、从哪读、结果多少、差在哪
+python count_seed.py --json    # 机读的
+```
+
+| 口径 | 数什么 | 从哪读 |
+|:--|:--|:--|
+| A 名片库文件数 | 名片库这一层里以 `.md` 结尾的实体文件 | `<ASSETS>/名片/` |
+| B 带锚的名片条目数 | 种子里面片条目的锚列表非空的条数 | `seed.json` |
+| C 锚条数 | 所有名片的锚逐条相加（同一路径被两个件盯算两条） | `seed.json` |
+| D 去重对象数 | C 里那些 path 去重后的个数 | `seed.json` |
+| E `looks_at` 条数 | 每份 `SKILL.md` 的 `card.looks_at` 逐份相加 | `技能/*/SKILL.md`（不读种子） |
+| F birth 条数 | 种子里 `birth.at` 非空的节点数 | `seed.json` |
+
+**E 和 A~D 不是同一份数据**：种子里一个节点挂的是它的「名片」（先天件的名片来自名片库），
+而 `SKILL.md` 的 `card:` 段是这份 skill 自己长出来的名片。两条都算对了，差几条、差在哪个节点，
+`count_seed.py` 会指名道姓打出来。要比就同一个脚本跑两次比，别横着比。
+
+这一台机器上跑出来的结果是
+**名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚 227 条 ／ 去重对象 178 个**。
 
 种子的价值一半在「记得住」，一半在「看得见」—— **看得见的边界，别人才知道下一步往哪长。**
 
@@ -145,13 +212,13 @@
 
 **第二层 · 数据已经在，只差一层查询（不是已有功能）**
 
-种子里已经躺着：226 个锚点、65 个 birth、89 条时刻、10 张名片、5 圈年轮。
+种子里已经躺着：锚 227 条（口径 C）、88 条 birth、10 张名片、5 圈年轮 —— 要用 `count_seed.py` 复算，别手抄。
 下面全是「拿这份现成数据写一个查询」的活，**代码还没写**：
 
 | 想做但还没做 | 数据已经够，缺什么 |
 |:--|:--|
 | 依赖闭包（改这里牵动谁） | 锚点里有 `path`、有 `looks_at` —— 反向建索引即可 |
-| 僵尸件识别（哪些一年不动） | 89 条 `birth.at` 在，跟今天比一把 |
+| 僵尸件识别（哪些一年不动） | 88 条 `birth.at` 在，跟今天比一把 |
 | 某一天的系统快照 | 5 圈年轮的指标全留着，可按时刻回放 |
 | 跨机器清单体检 | 同一套脚本换一台跑，两份 `seed.json` 对比 |
 | 生命周期分级（活 → 低频 → 封存） | 时刻 + 引用数都在，缺一条分级规则 |
@@ -388,12 +455,19 @@ object     DSH desktop 0.2.2-rc.2, app.asar 208,137,981 bytes, sha256 49fd1b08�
 measured   21,682 files (1,678 unpacked) / 4 presets, 112 rows / 14 upgrade-guide directories
 innate     11 skills (dsh-innate entry + 10 directions), one shared fingerprint 89de2e2de843
 cards      10 innate cards (layout / plugin / service / preset / port / slot / window / doc / bundled-skill / express)
-acquired   65 acquired artifacts, each with the five-part birth label
-anchors    88 skills grew a card section, 226 looks_at total (216 file + 10 dir, 179 distinct objects)
-time       89 birth.at stamps, earliest 2026-10-09, latest 2026-11-17
+acquired   65 top-level acquired artifacts (77 nodes under them), each with the five-part birth label
+anchors    10 card files / 88 card entries carrying anchors / 227 anchors / 178 distinct objects
+time       88 birth.at stamps, earliest 2026-10-09, latest 2026-11-17
 rings      5 rings, all under the same fingerprint
 verify     live.py --check 0 problems; verify.py 97 checks green; second gen_innate run wrote 0 files
 ```
+
+> **The four numbers on the `anchors` line must be recomputed with `python count_seed.py` — never copied by hand,
+> and never compared across different counting conventions.** The four are four ways of counting: card files on disk /
+> card entries whose anchor list is non-empty / anchors summed one by one (the same file watched by two artifacts
+> counts twice) / distinct objects after de-duplicating paths. A sixth number — `looks_at` entries read straight from
+> `SKILL.md` frontmatter instead of from the seed — is **not the same data**; `count_seed.py` prints exactly how far
+> the two conventions differ and on which node. The conventions are written into that script, not into this table.
 
 | Step | Output |
 |:--|:--|
@@ -432,9 +506,70 @@ notices). So the showcase has to be live too: **generated from `seed.json` on de
 
 **The form follows the audience**: structured data for agents, a clickable page for people.
 
-On our machine, that page opens to **11 innate artifacts · 65 acquired artifacts · 226 anchors · 12 blank nodes**.
-The blank nodes are the 12 directories under `插件\` that no sentence describes yet — they do not disappear,
-and they are not padded with placeholders.
+#### Generating that page: `render_seed.py`
+
+This is a command, not a claim. `scripts/render_seed.py` generates **one self-contained HTML file** from `seed.json`:
+
+```bash
+cd scripts
+python render_seed.py                      # default seed (resolved by paths.py) → ./seed-tree.html
+python render_seed.py <seed.json>          # explicit seed
+python render_seed.py <seed.json> -o out.html
+python render_seed.py --print-path         # only print where the default seed is
+```
+
+Then open the file in a browser. **Single file, no external resources at all** — no CDN, no web fonts, no images.
+It opens offline; double-clicking is enough.
+
+What is on the page (everything computed from `seed.json` at generation time, no node name hard-coded):
+
+| Where | What |
+|:--|:--|
+| top stats | node count / card entries / anchors / distinct objects / broken anchors (plus innate and acquired counts, blank nodes) |
+| tree | expanded by `birth.from` — `from` is the parent; innate on top, acquired below; unresolvable `from` listed as "parent not found" |
+| detail | click any node: name / short name / birth four lines (at / from / 依据 / act) / its cards and every anchor (with existence) / fingerprint and seen_at |
+| edges | an anchor pointing at a missing path is marked red and tabulated under "broken anchors"; artifacts with no anchor or no birth are tabulated under "blank" |
+
+Those two edge classes also show up in the tree itself (a red tag next to the node name).
+There is a filter box and expand/collapse-all for large trees.
+
+**This page is generated from `seed.json` every time — change the seed, rerun the command, and the page is new.
+That is exactly the difference between it and a static screenshot:** a screenshot cannot be clicked and does not know
+it has gone stale; this page opens and catches up with a single rerun.
+
+Idempotent: running it twice on the same `seed.json` produces byte-identical output (no timestamps in the body;
+the generator and source path appear only in a trailing HTML comment).
+
+On our machine, the page from the first command above reports
+**88 nodes (11 innate · 77 acquired) / 88 card entries / 227 anchors (178 distinct objects) / 0 broken / 0 blank**.
+
+> Recompute those with `python count_seed.py` (same directory) — do not copy them by hand, and do not compare
+> numbers from different counting conventions. The script prints what each convention counts and where they differ.
+
+#### Conventions: one thing, several ways to count it
+
+"Is it 226 or 227 anchors" is not a disagreement — it is two conventions compared side by side.
+`scripts/count_seed.py` writes each convention into code and prints one definite set of numbers:
+
+```bash
+python count_seed.py           # human: what each convention counts, where it reads, the result, where they differ
+python count_seed.py --json    # machine
+```
+
+| Convention | What it counts | Where it reads |
+|:--|:--|:--|
+| A card files | `.md` files directly under the card library | `<ASSETS>/名片/` |
+| B card entries with anchors | card entries in the seed whose anchor list is non-empty | `seed.json` |
+| C anchor count | every anchor of every card, summed | `seed.json` |
+| D distinct objects | those anchor paths after de-duplication | `seed.json` |
+| E `looks_at` entries | `card.looks_at` summed over every `SKILL.md` | `技能/*/SKILL.md` (not the seed) |
+| F birth records | nodes whose `birth.at` is non-empty | `seed.json` |
+
+**E is not the same data as A–D**: the seed attaches a node's *card* (innate cards come from the card library), while
+the `card:` block in a `SKILL.md` is the card that skill grew for itself. Both are correct; `count_seed.py` names
+how far they differ and on which node. Compare like with like — same script, two runs.
+
+On this machine: **10 card files / 88 card entries with anchors / 227 anchors / 178 distinct objects**.
 
 Half the value of a seed is that it *remembers*; the other half is that it *is visible* —
 **a visible edge is what tells the next person where to grow.**
@@ -449,13 +584,14 @@ second run converges.
 
 **Layer 2 — the data is already there, only a query layer is missing (not an existing feature).**
 
-Already sitting in the seed: 226 anchors, 65 birth records, 89 timestamps, 10 cards, 5 rings.
+Already sitting in the seed: 227 anchors (convention C), 88 birth records, 10 cards, 5 rings — recompute with
+`count_seed.py`; do not copy them by hand.
 Everything below is "write a query over data that exists". **The code is not written yet.**
 
 | Wanted but not built | Data is enough; what is missing |
 |:--|:--|
 | dependency closure (change here, what moves) | anchors carry `path` and `looks_at` — just invert the index |
-| zombie detection (untouched for a year) | 89 `birth.at` records; compare against today |
+| zombie detection (untouched for a year) | 88 `birth.at` records; compare against today |
 | a system snapshot for a given day | 5 rings of metrics are kept; replay by timestamp |
 | cross-machine inventory check | run the same scripts elsewhere, diff two `seed.json` files |
 | lifecycle grading (live → low-frequency → archived) | timestamps and reference counts exist; missing a rule |

@@ -6,3 +6,7 @@ assets/
 # Python 缓存
 __pycache__/
 *.pyc
+
+# 展示器产物：每次从 seed.json 现生成，不进仓库（种子一变它就过期，进来就成了假的历史）
+seed-tree.html
+*.seed-tree.html
