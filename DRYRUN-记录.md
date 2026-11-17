@@ -89,3 +89,24 @@ description: 教一台机器从本体里长出种子: 冒号没引号，还有"�
 上面第 32 行、第 34 行记的两个 Windows 坑**依然有效**，本次发布照样要带：
 `PYTHONUTF8=1`、前置 `which.cmd`、显式 `--github-user fjshoumeng`。
 
+## 发布结果（2026-11-17）
+
+```
+https://github.com/fjshoumeng/seed-lineage   公开（PUBLIC），默认分支 main，13 个文件
+```
+
+- dry-run 退出码 **0**（改名与降级之后重跑的那一次）
+- 发布器末尾仍打印 `❌ 验证失败: 真实安装失败：临时目录中没有生成 .agents/skills/<name>/SKILL.md`
+  —— 这是发布器 `verify_skill()` 在 Windows 上的误报：它查的是
+  `os.path.join(tmpdir, ".agents", ...)`，而 `tmpdir` 在 Windows 是 `%TEMP%`，
+  `npx skills` 把 skill 装到**当前工作目录**下，两边不是同一个地方。
+- 同一件事手工复核过，通过：在空目录里跑
+  `npx skills add fjshoumeng/seed-lineage --skill seed-lineage --yes`
+  → `✓ .\.agents\skills\seed-lineage`，`SKILL.md` 在，`name: seed-lineage` 正确。
+  仓库 `--list` 也报 `Found 1 skill`。
+- 仓库内容按 blob sha 与本地 `HEAD` 逐个比对：README / SKILL.md / LICENSE / .gitignore / 脚本全部一致。
+- `state/`（量出来的中间账）**没进仓库**：里面带本机绝对路径，而且每台机器不一样 —— 进了仓库就变成标准答案。
+
+还没做：`npx skills` 装到 `~/.agents` 之后没在本机当技能跑过一遍（只有发布器那步同步了一份副本）。
+
+
