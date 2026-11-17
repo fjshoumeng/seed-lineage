@@ -3,9 +3,10 @@
 > 你问 agent「这个功能在哪个文件里」，它去递归搜盘三分钟，给你一个猜的答案。
 > 更糟的是：你写了文档，它引用的那个文件三个月前就改过了，文档还在那儿装着没事。
 
-`seed-lineage` 让这台机器从自己的本体长出索引 —— **文档不再需要人工维护，因为它每次都是量出来的；对象一变，它当场报警。**
+`seed-lineage` 是一种**能力**：从任何有固定结构的东西里量出形状 → 长出描述 → 组成能复算身世的树 → 校验不变量。
+量出来的索引不需要人工维护，因为对象一变它当场报警。
 
-不是抄一份别人的说明书，是让每台机器量出自己的数、长出自己的一套，并且**永远知道自己有没有过期**。
+**这一份实现跑在 DSH 上，它是范例，不是产品，不是标准答案，更不是上限。**
 
 **[中文](#中文) | [English](#english)**
 
@@ -14,7 +15,31 @@
 <a name="中文"></a>
 ## 中文
 
-### 它到底做什么
+### 一 · 这是能力，不是产品
+
+种子不是一套文档模板，是四个动作：
+
+```
+1 量形状      —— 从对象里量出「它必然是什么」：位置、分类、形制、计数、指纹
+2 长描述      —— 把量到的事实按方向组织成说明（描述出来的，不是人写的）
+3 组身世树    —— 每个件写出生标签（谁生的 + 照哪条规律长的 + 什么时候），投影成一棵树
+4 校验不变量  —— 重算指纹，对不上说明对象变了，当场红
+```
+
+这四个动作**不绑在 DSH 上**。判据要换，因为「必然是什么」换个对象就不一样：
+
+| 对象 | 量什么形状 | 判据换到哪 |
+|:--|:--|:--|
+| DSH 本体（`app.asar`） | 包、入口、路由、预设、槽位 | `package.json` 的 main/exports、路由 kind |
+| `jar` / `war` | 类、清单、依赖、入口类 | `META-INF/MANIFEST.MF` 的 Main-Class |
+| npm 依赖树 | 顶层依赖、传递依赖、版本收敛 | `package-lock.json` 的 resolved / integrity |
+| docker 镜像层 | 层、层里改了什么、谁覆盖谁 | 层的 digest 与父子指针 |
+| 一个代码仓库 | 模块图、导入关系、谁引谁 | import / require 的静态解析结果 |
+
+**判据变了，方法没变。** 今天只把 DSH 这一条真跑通了 —— 所以这份文档里的数字都是 DSH 的数。
+那不是「只能用在 DSH 上」，那是「这一条我通过实测了」。
+
+**你这份实现是范例，不是答案。** 它到哪，取决于我们的思想到哪。想想不到的，不是做不到，是还没想到。
 
 ```
 先天物质（机器上本来就有）  →  先天 skill（自动描述本体现象）
@@ -24,24 +49,95 @@
                             →  再投一次种子（闭环）
 ```
 
-四个字概括：**不写文档，长文档。**
-
-因为写出来的文档，写完那天就开始假，而且它不会告诉你它假了。
+四个字概括：**不写文档，长文档。** 写出来的文档，写完那天就开始假，而且它不告诉你它假了；
 长出来的文档，对象一变就自己报警。
 
-### 你会得到什么
+### 二 · 它能解决什么问题 —— 人的问题
 
-在临时目录里对你的真实本体跑完整链，**我这一台机器**的结果是：
+- **接手陌生项目，不知道从哪看起。** 几万个文件没有地图 → 先从本体量出结构与计数，按方向生成说明。量出来的，不是人肉翻的。
+- **文档过期了没人知道，它还在骗人。** → 对象一变指纹对不上，当场报警。过期变成一条红，不是一个没人发现的谎。
+- **系统越改越乱，加了什么忘了为什么加。** → 每个件必须有出处：`birth.from`（谁生的）、`依据`（照哪条规律长的）、`at`（什么时候）。没出处的进不了树。
+- **改一处不知道会影响哪里。** → 锚点先告诉你谁盯着它；改完，盯着它的那份描述会红。拿到的是提醒，不是事后才发现。
+- **想知道某某东西到底归谁管。** → `find.cjs <关键词>` 四段命中：归谁管、盯的哪个路径、哪份技能写过它、下一步读哪个文件哪一节。30 毫秒，不搜盘。
+- **想给新来的人一份能看的架构说明。** → 先天 skill 本身就是按方向组织好的架构说明，而且跟着版本自动更新。
+- **东西太多，分不清哪些还在用、哪些已经死了。** → 每个件带时刻与指纹，数据全在种子里（见第五节第二层，查询还没写）。
+- **一份索引换台机器就得重写。** → 地址三级解析、数字从本体量、校验里没有你的数。换机器量出别的数是对的。
+
+### 三 · 它能解决什么问题 —— agent 的问题
+
+这一段是这套方法独特的地方：它是 agent 给自己用的，不是给人看的报告。
+
+- **不知道自己在哪台机器上、这台机器有什么。** agent 每次从零开始，靠猜和搜 → 种子第一行就是本体地址 + 版本 + 指纹，下面整棵树就是「这台机器有什么」。
+- **找东西只能递归搜盘，搜完还是猜。** → 先查种子，30 毫秒给到文件与小节；四条全零才允许搜盘。
+- **读过的东西记不住，下次还要重读。** → 量出来的索引进种子，下一次投种子还在。读一次，写进脉络，全树可见。
+- **不知道自己写的文档已经过期。** → 它写的那句「这是什么」绑在锚点上；对象一变，它自己那份描述就红，不用等别人发现。
+- **不知道自己能做什么、该往哪长。** → 查种子找到该照哪张名片长，名片的「规律一句话」+「判据」就是形状要求。先塑形，再量形。
+- **改了什么之后不知道有没有搞坏别的。** → 改完跑 `verify.py`（七组逐项）；盯它的描述会红，红了你必须先看。
+- **无法向别的 agent 交代「我这边有什么」。** → 种子就是那份交代：树形、可机读（`seed.json`）、每条带出处。
+
+**它不解决什么**：代码质量好不好、这段代码语义是什么、跨 harness 换一套判据 —— 见文末「局限」。
+
+### 四 · 范例：跑在 DSH 上（实测数字）
+
+这一节是**一台机器的实测账**，摆出来为了证明「这四个动作真能跑起来」，不是为了当标准答案。
+
+```
+对象     DSH 桌面版 0.2.2-rc.2，app.asar 208,137,981 字节，sha256 49fd1b08…
+量出来   文件 21,682（unpacked 1,678 在外）／预设 4 份 112 行／升级指引 14 个目录
+先天件   11 份（dsh-innate 入口 + 10 个方向），同一枚指纹 89de2e2de843
+先天名片 10 张（布局 / 插件 / 服务 / 预设 / 端口 / 槽位 / 窗口 / 文档 / 自带skill / 表达）
+后天线   65 个后天件，每个带 birth 五件套
+锚点     88 份 skill 长出名片段，合计 226 个 looks_at（216 file + 10 dir，去重 179 个对象）
+时刻     89 条 birth.at，最早 2026-10-09，最新 2026-11-17
+年轮     5 圈，全在同一枚指纹下
+校验     live.py --check 0 个问题；verify.py 97 项全过；二轮 gen_innate 写出 0 份（收敛）
+```
 
 | 步骤 | 输出 |
 |:--|:--|
-| 走完四步 `scan → gen_innate → live → verify` | 一份可复算的账，字典里每一个数都能重跑复现 |
-| 长出先天 skill | 8 份 skill + 对应名片，每张名片带一枚锚指纹 |
+| 走完四步 `scan → gen_innate → live → verify` | 一份可复算的账，每个数都能重跑复现 |
+| 长出先天 skill 与名片 | 11 份 / 10 张，每张带锚指纹 |
 | `live.py --check` | `0 个问题` |
 | `verify.py` | `97 项校验，全部通过` |
 
-**这组数只证明流程走通了，不是标准答案。** 你的机器量出来是别的数 —— 那是对的。
-我没有把「多少文件、多少包」这类量写在这里，因为写死的那一刻，文档就开始假了；这正是这套东西要解决的问题，它自己不该犯。
+**这些数字只证明流程走通了。** 不证明你的机器也长这样（你的数不一样才是对的），
+不证明这是标准答案（换对象判据全换），不证明这是上限（见下一节）。
+
+### 五 · 能长到多远
+
+**上限是思想的上限，不是实际上限。** 今天想到的能做到；想不到的不是做不到，是还没想到。
+
+**第一层 · 今天就能跑（已实测）**
+
+量本体（文件/包/预设/端口/槽位/服务）· 生成先天 skill · 长名片 · 投影种子 · 校验（七组）· 查种子。
+全部实测跑通，二轮收敛。
+
+**第二层 · 数据已经在，只差一层查询（不是已有功能）**
+
+种子里已经躺着：226 个锚点、65 个 birth、89 条时刻、10 张名片、5 圈年轮。
+下面全是「拿这份现成数据写一个查询」的活，**代码还没写**：
+
+| 想做但还没做 | 数据已经够，缺什么 |
+|:--|:--|
+| 依赖闭包（改这里牵动谁） | 锚点里有 `path`、有 `looks_at` —— 反向建索引即可 |
+| 僵尸件识别（哪些一年不动） | 89 条 `birth.at` 在，跟今天比一把 |
+| 某一天的系统快照 | 5 圈年轮的指标全留着，可按时刻回放 |
+| 跨机器清单体检 | 同一套脚本换一台跑，两份 `seed.json` 对比 |
+| 生命周期分级（活 → 低频 → 封存） | 时刻 + 引用数都在，缺一条分级规则 |
+| 架构说明书自动生成 | 10 张先天名片已是按方向的架构说明，缺一层拼装导出 |
+
+**数据层已经到了，查询层还没到。** 谁先写这几个查询，谁就拿到第一层的下一批实测。
+
+**第三层 · 路，不是已交付**
+
+这些方向成立，但这一份实现没做，也没实测过：
+
+- `jar` / `war` —— 判据换到 `MANIFEST.MF`
+- npm 依赖树 —— 判据换到 lockfile 的 resolved / integrity
+- docker 镜像层 —— 判据换到层 digest 与父子指针
+- 代码仓库模块图 —— 判据换到 import / require 静态解析
+
+它们共用前三个动作，只有「量什么算必然」要重写。不是「做四个新功能」，是「同一套方法换四次尺子」。
 
 ### 装上
 
@@ -141,13 +237,28 @@ export DSH_ORIGIN=/你的/dsh/目录
 | `gen_innate.py` 每次重写全部文件 | 生成的正文里混进了时间戳 | 正文里只允许 `seen_at` 带时刻，且只在指纹变了时更新 |
 | `gen_innate.py` 把 `card:` 段抹了 | 生成器整份覆盖 frontmatter | 重写前保住 `card:` 整段 —— 名片归投影器管，不归生成器管；否则两个工具互相改，永不收敛 |
 
-### 风险与限制
+### 局限（它做不到什么，以及风险）
+
+**三条明确做不到，别指望它：**
+
+- **不做代码质量判断。** 它量「是什么」，不判「该不该」。架构好坏、写得对不对、有没有更好的写法，不在射程里。
+  名片正文里连「失败 / 错误 / 坑」这类评价词都不许出现，校验会扫。
+- **不做语义理解。** 它不知道某段代码在业务上是什么意思。「这是什么」「边界在哪」「为什么这么写」仍要人写进正文 ——
+  它只负责让那句话变红，不负责替你想出那句话。
+- **跨 harness 的判据要重写。** 现在的判据长在 DSH 的形状上（`app.asar` + `runtime.json`、`package.json` 的 main/exports、
+  路由按 kind 分表）。换一套宿主，本体形态变了，判据得按新形态重写 —— 方法和七环能照搬，判定那几行不能。
+  这不是缺陷，是这类能力的固有形状：**尺子必须贴着对象造。**
+- **这一份只把一条路跑通了。** 第五节第三层（jar / npm / docker / 模块图）是方向，不是已交付。
+  别拿它当「已经支持任意对象」用。
+
+**风险：**
 
 - **只读本体。** 全程不动 `app.asar`。先天一个字都不改，后天全落在另一个目录。
 - **会写文件**，但只写这三个地方：`<ASSETS>/技能/`、`<ASSETS>/名片/`、`<STATE>/`。
   跑之前建议先把它指向一个临时目录试一遍（`DSH_ASSETS` / `DSH_STATE` 指到 `%TEMP%` 下即可）。
 - **不联网。** 全程本地读文件。
 - **不同版本数不同。** 别把任何一次的输出当成基线写死 —— 写死的那一刻它就开始假了。
+- **跑不出运行期的事。** 谁消费了什么、今天发生了什么、某端口此刻通不通 —— 那些在进程与日志里，不在静态文件里。
 
 ### 致谢
 
@@ -168,10 +279,38 @@ MIT
 > Ask your agent "which file implements this feature" and it recursively greps the disk for three minutes, then guesses.
 > Worse: the doc you wrote points at a file that changed three months ago, and the doc still sits there pretending nothing happened.
 
-`seed-lineage` makes the machine grow its own index **from its own installation** — you stop maintaining docs by hand,
-because every entry is measured, and the moment the object changes it flips red.
+`seed-lineage` is a **capability**: measure the shape of anything with a fixed structure → grow descriptions →
+build a lineage tree whose provenance can be recomputed → verify the invariants. A measured index needs no manual
+upkeep, because it flips red the moment its object changes.
 
-### What it does
+**This implementation runs on DSH. It is an example — not a product, not the reference answer, and not the ceiling.**
+
+### 1 · This is a capability, not a product
+
+A seed is not a doc template. It is four actions:
+
+```
+1 measure the shape   — what the object *necessarily* is: position, class, form, count, fingerprint
+2 grow descriptions   — organise the measured facts into per-direction docs (described, not written)
+3 build the lineage   — every artifact gets a birth label (parent + which law it followed + when), projected as a tree
+4 verify invariants   — recompute the fingerprint; a mismatch means the object changed, so it flips red
+```
+
+These four actions **are not tied to DSH**. The criteria change, because "necessarily what" differs per object:
+
+| Object | What you measure | Where the criteria move to |
+|:--|:--|:--|
+| DSH install (`app.asar`) | packages, entries, routes, presets, slots | `package.json` main/exports, route kind |
+| `jar` / `war` | classes, manifest, dependencies, entry class | `META-INF/MANIFEST.MF` Main-Class |
+| npm dependency tree | direct deps, transitive deps, version convergence | `package-lock.json` resolved / integrity |
+| docker image layers | layers, what each changed, which overrides which | layer digest and parent pointers |
+| a code repository | module graph, imports, who references whom | static resolution of import / require |
+
+**The criteria change; the method does not.** Only the DSH path is actually proven today — that is why every
+number in this README is a DSH number. It does not mean "DSH only"; it means "this one path is measured".
+
+**This implementation is an example, not the answer.** How far it reaches depends on how far our thinking reaches.
+What we have not thought of is not impossible — it is just not thought of yet.
 
 ```
 innate matter (already on disk)  →  innate skills (auto-generated descriptions)
@@ -181,23 +320,96 @@ innate matter (already on disk)  →  innate skills (auto-generated descriptions
                                  →  re-project the seed (loop closes)
 ```
 
-The whole idea: **don't write the docs — grow them.** A hand-written doc starts lying the day it's finished
+The whole idea: **don't write the docs — grow them.** A hand-written doc starts lying the day it is finished
 and never tells you. A grown one flips red the moment its object changes.
 
-### What you get
+### 2 · Problems it solves — for people
 
-Running the full chain against a real install, on *my* machine:
+- **Handed an unfamiliar project, no idea where to start.** → measure structure and counts from the installation, then generate per-direction descriptions. Measured, not hand-explored.
+- **The doc went stale and nobody knows; it is still lying.** → object changes, fingerprint mismatches, it flips red. Expiry becomes a signal, not a silent lie.
+- **The system grows messier; nobody remembers what was added or why.** → every artifact carries `birth.from` (parent), `依据` (which law it followed), `at` (when). No provenance, no place in the tree.
+- **Changed one place, unsure what it affects.** → the anchors first tell you who watches it; after the change, that description flips red.
+- **Which package provides this service, which plugin registered that route.** → innate skills and cards list them by direction; criteria read declarations, not filenames.
+- **Want a readable architecture note for the next person.** → the innate skills *are* that note, organised by direction, and they update with the version.
+- **Too many things; which are alive and which are dead.** → every artifact carries a timestamp and a fingerprint; the data is already in the seed (see §5, second layer — the queries are not written).
+- **One index per machine, not one index thrown away per machine.** → three-level address resolution, numbers measured, no numbers of mine in the verifier.
+
+### 3 · Problems it solves — for agents
+
+This is the part that is genuinely different: it is for the agent to use on itself, not a report for humans.
+
+- **It does not know which machine it is on or what is on it.** → the first line of the seed is the install address, version and fingerprint; the tree below it is "what this machine has".
+- **Finding things means walking the disk, and the answer is still a guess.** → query the seed first: milliseconds to the file and section. Only when all four sections are empty may it walk the disk.
+- **It cannot remember what it read; next session it reads it again.** → the measured index is projected into the seed and survives the next projection. Read once, write it into the lineage, visible tree-wide.
+- **It does not know its own documentation went stale.** → the sentence "this is what it is" is bound to an anchor; when the object changes, that description flips red without waiting for a human.
+- **It does not know what it can do or where it should grow next.** → query the seed for which card to follow; that card's law plus criteria are the shape requirement. Shape first, then measure.
+- **After a change it does not know whether it broke something else.** → run `verify.py` (seven groups); descriptions that watch it flip red, and red means look first.
+- **It cannot tell another agent "here is what I have".** → the seed *is* that handover: tree-shaped, machine-readable (`seed.json`), every line with provenance.
+
+**Not in scope:** code quality judgement, semantic understanding of the code, and porting the criteria to a
+different harness — see Limits.
+
+### 4 · Example: what it looks like running on DSH (measured)
+
+This is the measured ledger of **one machine**, shown to prove the four actions actually run — not as a reference answer.
+
+```
+object     DSH desktop 0.2.2-rc.2, app.asar 208,137,981 bytes, sha256 49fd1b08…
+measured   21,682 files (1,678 unpacked) / 4 presets, 112 rows / 14 upgrade-guide directories
+innate     11 skills (dsh-innate entry + 10 directions), one shared fingerprint 89de2e2de843
+cards      10 innate cards (layout / plugin / service / preset / port / slot / window / doc / bundled-skill / express)
+acquired   65 acquired artifacts, each with the five-part birth label
+anchors    88 skills grew a card section, 226 looks_at total (216 file + 10 dir, 179 distinct objects)
+time       89 birth.at stamps, earliest 2026-10-09, latest 2026-11-17
+rings      5 rings, all under the same fingerprint
+verify     live.py --check 0 problems; verify.py 97 checks green; second gen_innate run wrote 0 files
+```
 
 | Step | Output |
 |:--|:--|
 | the four steps `scan → gen_innate → live → verify` | a reproducible ledger — every number can be re-derived |
-| innate skills | 8 skills + their cards, each card carrying an anchor fingerprint |
+| innate skills + cards | 11 skills / 10 cards, each card carrying an anchor fingerprint |
 | `live.py --check` | `0 problems` |
 | `verify.py` | `97 checks, all green` |
 
-That set only proves the pipeline runs end to end; it is **not** a reference answer.
-Your install will yield different numbers — that's correct, not a bug.
-File and package counts are deliberately absent: pinning a number is exactly how a doc starts lying.
+That set only proves the pipeline runs end to end. Your install will yield different numbers — that is correct.
+It is not the reference answer (different object, different criteria), and it is not the ceiling (see next).
+
+### 5 · How far it can grow
+
+**The ceiling is the ceiling of thought, not of what is possible.**
+
+**Layer 1 — runs today (measured).** Measure the install (files / packages / presets / routes / slots / services) ·
+generate innate skills · grow cards · project the seed · verify (seven groups) · query the seed. All measured,
+second run converges.
+
+**Layer 2 — the data is already there, only a query layer is missing (not an existing feature).**
+
+Already sitting in the seed: 226 anchors, 65 birth records, 89 timestamps, 10 cards, 5 rings.
+Everything below is "write a query over data that exists". **The code is not written yet.**
+
+| Wanted but not built | Data is enough; what is missing |
+|:--|:--|
+| dependency closure (change here, what moves) | anchors carry `path` and `looks_at` — just invert the index |
+| zombie detection (untouched for a year) | 89 `birth.at` records; compare against today |
+| a system snapshot for a given day | 5 rings of metrics are kept; replay by timestamp |
+| cross-machine inventory check | run the same scripts elsewhere, diff two `seed.json` files |
+| lifecycle grading (live → low-frequency → archived) | timestamps and reference counts exist; missing a rule |
+| auto-generated architecture note | the 10 innate cards already are that, by direction; missing the assembly step |
+
+**The data layer has arrived; the query layer has not.** Whoever writes those queries gets the next batch of measurements.
+
+**Layer 3 — a path, not a shipped feature.**
+
+These directions hold, but this implementation has not done them and has not measured them:
+
+- `jar` / `war` — criteria move to `MANIFEST.MF`
+- npm dependency tree — criteria move to lockfile resolved / integrity
+- docker image layers — criteria move to layer digest and parent pointers
+- code repository module graph — criteria move to static import / require resolution
+
+They share the first three actions; only "what counts as necessary" must be rewritten. It is not four new features,
+it is the same method with four different rulers.
 
 ### Install
 
@@ -241,8 +453,23 @@ python verify.py       # 4 verify the whole chain
 
 ### Limits
 
-Read-only on the installation. Writes only under `技能/`, `名片/`, and the state directory.
-No network. Numbers differ across versions by design — pinning them is how they start lying.
+**Three things it explicitly does not do:**
+
+- **No code-quality judgement.** It measures *what is*, never *what should be*. Whether the architecture is good
+  is outside its range; evaluation words are scanned for and rejected in card bodies.
+- **No semantic understanding.** It does not know what a piece of code means in business terms. "What is this",
+  "where are the boundaries", "why was it written this way" still have to be written by a human — the tool only
+  makes those sentences flip red when they stop being true.
+- **Harness-specific criteria.** The criteria are shaped by DSH (`app.asar` + `runtime.json`, `package.json`
+  main/exports, routes split by kind). On another host the matter looks different and the criteria must be
+  rewritten — the method and the seven links port, the deciding lines do not. This is not a defect; it is the
+  inherent shape of the capability: **the ruler has to be built against the object.**
+- **Only one path is proven here.** Layer 3 in §5 (jar / npm / docker / module graph) is a direction, not a
+  shipped feature. Do not read this as "works on arbitrary objects".
+
+**Risks:** read-only on the installation; writes only under `技能/`, `名片/`, and the state directory; no network;
+numbers differ across versions by design; runtime facts (who consumes what, what happened today) are not measurable
+from static files and are deliberately left blank.
 
 ### License
 
