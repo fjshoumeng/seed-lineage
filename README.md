@@ -58,7 +58,7 @@
 - **文档过期了没人知道，它还在骗人。** → 对象一变指纹对不上，当场报警。过期变成一条红，不是一个没人发现的谎。
 - **系统越改越乱，加了什么忘了为什么加。** → 每个件必须有出处：`birth.from`（谁生的）、`依据`（照哪条规律长的）、`at`（什么时候）。没出处的进不了树。
 - **改一处不知道会影响哪里。** → 锚点先告诉你谁盯着它；改完，盯着它的那份描述会红。拿到的是提醒，不是事后才发现。
-- **想知道某某东西到底归谁管。** → `find.cjs <关键词>` 四段命中：归谁管、盯的哪个路径、哪份技能写过它、下一步读哪个文件哪一节。30 毫秒，不搜盘。
+- **想知道某某东西到底归谁管。** → `find.cjs <关键词>` 四段命中：归谁管、盯的哪个路径、哪份技能写过它、下一步读哪个文件哪一节。30 毫秒，不搜盘。要知道某一节的正文，`find.cjs --get "名#节"` 直接取出来，不用整份读。
 - **想给新来的人一份能看的架构说明。** → 先天 skill 本身就是按方向组织好的架构说明，而且跟着版本自动更新。
 - **东西太多，分不清哪些还在用、哪些已经死了。** → 每个件带时刻与指纹，数据全在种子里（见第六节第二层，查询还没写）。
 - **一份索引换台机器就得重写。** → 地址三级解析、数字从本体量、校验里没有你的数。换机器量出别的数是对的。
@@ -68,7 +68,8 @@
 这一段是这套方法独特的地方：它是 agent 给自己用的，不是给人看的报告。
 
 - **不知道自己在哪台机器上、这台机器有什么。** agent 每次从零开始，靠猜和搜 → 种子第一行就是本体地址 + 版本 + 指纹，下面整棵树就是「这台机器有什么」。
-- **找东西只能递归搜盘，搜完还是猜。** → 先查种子，30 毫秒给到文件与小节；四条全零才允许搜盘。
+- **找东西只能递归搜盘，搜完还是猜。** → 先查种子，30 毫秒给到文件与小节；四段全零才允许搜盘。
+- **找对了文件，还得整份读完才知道要什么。** → `--get "名#节"` 只取那一节。skill 会长到近千行，整份读是把负担塞进上下文；按节取才是这个规模下的做法。前提是节名统一（标准节序：这是什么 → 地址 → 端口表 → 数据落点 → 边界 → 年轮）。
 - **读过的东西记不住，下次还要重读。** → 量出来的索引进种子，下一次投种子还在。读一次，写进脉络，全树可见。
 - **不知道自己写的文档已经过期。** → 它写的那句「这是什么」绑在锚点上；对象一变，它自己那份描述就红，不用等别人发现。
 - **不知道自己能做什么、该往哪长。** → 查种子找到该照哪张名片长，名片的「规律一句话」+「判据」就是形状要求。先塑形，再量形。
@@ -87,7 +88,7 @@
 先天件   11 份（dsh-innate 入口 + 10 个方向），同一枚指纹 89de2e2de843
 先天名片 10 张（布局 / 插件 / 服务 / 预设 / 端口 / 槽位 / 窗口 / 文档 / 自带skill / 表达）
 后天线   65 个顶层后天件，往下共 77 个节点，每个带 birth 五件套
-锚点     名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚 227 条 ／ 去重对象 178 个
+锚点     名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚 228 条 ／ 去重对象 180 个（读数，会随种子重投变）
 时刻     88 条 birth.at，最早 2026-10-09，最新 2026-11-17
 年轮     5 圈，全在同一枚指纹下
 校验     live.py --check 0 个问题；verify.py 97 项全过；二轮 gen_innate 写出 0 份（收敛）
@@ -145,6 +146,7 @@ python render_seed.py                      # 默认取 paths.py 解析到的种�
 python render_seed.py <seed.json>          # 指定种子
 python render_seed.py <seed.json> -o out.html
 python render_seed.py --print-path         # 只打印默认种子在哪
+python render_seed.py --verify-idempotent  # 自证幂等：连渲染两次比 sha256
 ```
 
 生成完用浏览器打开那个文件即可 —— **单文件、不引用任何外网资源（没有 CDN、没有字体、没有图片）**，
@@ -165,10 +167,15 @@ python render_seed.py --print-path         # 只打印默认种子在哪
 **这一张页面每次从 `seed.json` 现生成 —— 种子一变，重跑一遍就是新的。这正是它和静态截图的区别：**
 截图不能点、也不知道自己已经过期；这个页面点得开，而且只要重跑一次命令就追上当下。
 
-幂等：同一份 `seed.json` 跑两遍，输出逐字节一致（正文里不含任何时间戳，只在文件末尾的注释里写生成器与来源）。
+**幂等**：同一份 `seed.json` 字节跑两遍，输出逐字节相同 —— 因为页面里不含任何**渲染时刻**，只在文件末尾的注释里写生成器与来源。
+页头那行「种子数据生成时刻」是 `seed.json` 自带的字段（`生成于`），它是**数据**，不是渲染时刻：种子重投它才变，重跑渲染器它不变。
+自己验一遍：`python render_seed.py --verify-idempotent` —— 连渲染两次比 sha256，一致才叫幂等。
+
+前提说清楚：幂等的对象是**同一份种子字节**。种子被重投过（`生成于` 变了、节点变了），出来当然是不一样的页面 ——
+那不是不幂等，那是数据变了。这也是它该有的样子。
 
 我们这台机器上，用上面第一条命令生成的那一页，顶部统计是
-**节点 88（先天 11 · 后天 77）／名片条目 88／锚 227 条（去重 178 个对象）／断锚 0／空白 0**。
+**节点 88（先天 11 · 后天 77）／名片条目 88／锚 228 条（去重 180 个对象）／断锚 0／空白 0**（读数；种子重投后会变，以脚本当前输出为准）。
 
 > 这些数字一律用 `python count_seed.py`（同一目录下）复算，别手抄，也别拿一个口径的数去对另一个口径的数。
 > 四个口径数的是什么、差在哪一条，那个脚本会逐条打出来 —— 见下一节。
@@ -197,7 +204,7 @@ python count_seed.py --json    # 机读的
 `count_seed.py` 会指名道姓打出来。要比就同一个脚本跑两次比，别横着比。
 
 这一台机器上跑出来的结果是
-**名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚 227 条 ／ 去重对象 178 个**。
+**名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚 228 条 ／ 去重对象 180 个**（读数；以脚本当前输出为准）。
 
 种子的价值一半在「记得住」，一半在「看得见」—— **看得见的边界，别人才知道下一步往哪长。**
 
@@ -212,7 +219,7 @@ python count_seed.py --json    # 机读的
 
 **第二层 · 数据已经在，只差一层查询（不是已有功能）**
 
-种子里已经躺着：锚 227 条（口径 C）、88 条 birth、10 张名片、5 圈年轮 —— 要用 `count_seed.py` 复算，别手抄。
+种子里已经躺着：锚 228 条（口径 C）、88 条 birth、10 张名片、5 圈年轮 —— 要用 `count_seed.py` 复算，别手抄。
 下面全是「拿这份现成数据写一个查询」的活，**代码还没写**：
 
 | 想做但还没做 | 数据已经够，缺什么 |
@@ -456,7 +463,7 @@ measured   21,682 files (1,678 unpacked) / 4 presets, 112 rows / 14 upgrade-guid
 innate     11 skills (dsh-innate entry + 10 directions), one shared fingerprint 89de2e2de843
 cards      10 innate cards (layout / plugin / service / preset / port / slot / window / doc / bundled-skill / express)
 acquired   65 top-level acquired artifacts (77 nodes under them), each with the five-part birth label
-anchors    10 card files / 88 card entries carrying anchors / 227 anchors / 178 distinct objects
+anchors    10 card files / 88 card entries carrying anchors / 228 anchors / 180 distinct objects (a reading — changes as the seed is re-projected)
 time       88 birth.at stamps, earliest 2026-10-09, latest 2026-11-17
 rings      5 rings, all under the same fingerprint
 verify     live.py --check 0 problems; verify.py 97 checks green; second gen_innate run wrote 0 files
@@ -516,6 +523,7 @@ python render_seed.py                      # default seed (resolved by paths.py)
 python render_seed.py <seed.json>          # explicit seed
 python render_seed.py <seed.json> -o out.html
 python render_seed.py --print-path         # only print where the default seed is
+python render_seed.py --verify-idempotent  # prove idempotence: render twice, compare sha256
 ```
 
 Then open the file in a browser. **Single file, no external resources at all** — no CDN, no web fonts, no images.
@@ -537,11 +545,17 @@ There is a filter box and expand/collapse-all for large trees.
 That is exactly the difference between it and a static screenshot:** a screenshot cannot be clicked and does not know
 it has gone stale; this page opens and catches up with a single rerun.
 
-Idempotent: running it twice on the same `seed.json` produces byte-identical output (no timestamps in the body;
-the generator and source path appear only in a trailing HTML comment).
+**Idempotent**: running it twice on the same `seed.json` bytes produces byte-identical output, because the page
+contains no **render time** — the generator and source path appear only in a trailing HTML comment.
+The "seed data generated at" line in the header is a field `seed.json` carries (`生成于`); it is **data**, not render
+time — it changes when the seed is re-projected, not when the renderer is rerun.
+Prove it yourself: `python render_seed.py --verify-idempotent` renders twice and compares sha256.
+
+The precondition matters: idempotence is about **the same seed bytes**. If the seed was re-projected (its `生成于`
+or its nodes changed), a different page is correct — that is data changing, not the renderer being non-deterministic.
 
 On our machine, the page from the first command above reports
-**88 nodes (11 innate · 77 acquired) / 88 card entries / 227 anchors (178 distinct objects) / 0 broken / 0 blank**.
+**88 nodes (11 innate · 77 acquired) / 88 card entries / 228 anchors (180 distinct objects) / 0 broken / 0 blank** (a reading; the seed re-projects, so take the script's current output as truth).
 
 > Recompute those with `python count_seed.py` (same directory) — do not copy them by hand, and do not compare
 > numbers from different counting conventions. The script prints what each convention counts and where they differ.
@@ -569,7 +583,7 @@ python count_seed.py --json    # machine
 the `card:` block in a `SKILL.md` is the card that skill grew for itself. Both are correct; `count_seed.py` names
 how far they differ and on which node. Compare like with like — same script, two runs.
 
-On this machine: **10 card files / 88 card entries with anchors / 227 anchors / 178 distinct objects**.
+On this machine: **10 card files / 88 card entries with anchors / 228 anchors / 180 distinct objects** (a reading).
 
 Half the value of a seed is that it *remembers*; the other half is that it *is visible* —
 **a visible edge is what tells the next person where to grow.**
@@ -584,7 +598,7 @@ second run converges.
 
 **Layer 2 — the data is already there, only a query layer is missing (not an existing feature).**
 
-Already sitting in the seed: 227 anchors (convention C), 88 birth records, 10 cards, 5 rings — recompute with
+Already sitting in the seed: 228 anchors (convention C), 88 birth records, 10 cards, 5 rings — recompute with
 `count_seed.py`; do not copy them by hand.
 Everything below is "write a query over data that exists". **The code is not written yet.**
 

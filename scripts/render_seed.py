@@ -208,6 +208,9 @@ def build(seed: dict, seed_path: str) -> dict:
         "orphan_count": sum(1 for n in nodes if n["from"] and n["from"] not in by_name and n["from"] not in ("原始", "")),
     }
 
+    # 种子里自带的时间字段（种子出生 / 生成于）是**数据**的一部分，不是渲染时刻：
+    # 它们随 seed.json 变，但不会因为「现在几点」而变。本脚本不写任何渲染时刻，
+    # 所以同一份 seed.json 字节跑两遍，输出必然逐字节相同（`--verify-idempotent` 可自证）。
     seed_meta = {
         "种子出生": str(seed.get("种子出生") or ""),
         "生成于": str(seed.get("生成于") or ""),
@@ -315,7 +318,8 @@ noscript{display:block;padding:20px;color:var(--warn)}
 <body>
 <header>
   <h1>种子 · 系统长成什么样</h1>
-  <div class="sub">数据源 <code>__SRCPATH__</code>　种子出生 <span class="mono">__BORN__</span>　生成于 <span class="mono">__GEN__</span>　本体 <span class="mono">__ORIGIN__</span></div>
+  <div class="sub">数据源 <code>__SRCPATH__</code>　种子出生 <span class="mono">__BORN__</span>　本体 <span class="mono">__ORIGIN__</span></div>
+  <div class="sub" title="这是 seed.json 里记着的时刻，不是本页渲染的时刻；本页不记录自己的渲染时刻，所以同一份种子重跑出来的页面逐字节相同。">种子数据生成时刻 <span class="mono">__GEN__</span>　<span class="muted">（seed.json 自带字段，非本页渲染时刻 —— 本页不写渲染时刻，故同一份种子重跑＝同一份输出）</span></div>
   <div class="stats" id="stats"></div>
 </header>
 <div class="toolbar">
@@ -619,6 +623,8 @@ def main(argv) -> int:
     if "--print-path" in args:
         print(default_seed())
         return 0
+    if "--verify-idempotent" in args:
+        return verify_idempotent()
     seed_path = args[0] if args else default_seed()
     seed_path = os.path.abspath(seed_path)
     if not os.path.isfile(seed_path):
@@ -651,7 +657,35 @@ def main(argv) -> int:
     if not any(n["act_known"] for n in data["nodes"]):
         print("提示：没有 PyYAML 或 SKILL.md 读不到，detail 里的 birth.act 会显示「没写 act」")
     print("打开：用浏览器打开上面这个文件（离线可开，不引用任何外网资源）")
+    print("自证幂等：python render_seed.py --verify-idempotent（同一份种子连续渲染两次比 sha256）")
     return 0
+
+
+def verify_idempotent() -> int:
+    """自证：同一份种子字节，连续渲染两次，比 sha256。
+
+    只说「幂等」不算数 —— 这一条让人自己跑一遍就能看见。它也说明了前提：
+    比的是「同一份 seed.json」，不是「同一个路径」。种子被重投过（`生成于` 变了）
+    自然出不同的页面，那不是不幂等，那是数据变了。
+    """
+    import hashlib
+
+    seed_path = default_seed()
+    if not os.path.isfile(seed_path):
+        print("× 找不到种子：" + seed_path, file=sys.stderr)
+        return 2
+    raw = open(seed_path, "rb").read()
+    seed = json.loads(raw.decode("utf-8"))
+    a = render_html(build(seed, seed_path)).encode("utf-8")
+    b = render_html(build(json.loads(raw.decode("utf-8")), seed_path)).encode("utf-8")
+    ha, hb = hashlib.sha256(a).hexdigest(), hashlib.sha256(b).hexdigest()
+    print("种子      %s" % seed_path)
+    print("种子字节  %s（%d 字节）" % (hashlib.sha256(raw).hexdigest()[:16], len(raw)))
+    print("第 1 次   %s（%d 字节）" % (ha, len(a)))
+    print("第 2 次   %s（%d 字节）" % (hb, len(b)))
+    print("结论      %s" % ("一致 —— 输出不含渲染时刻，同一份种子必然同一份页面"
+                           if ha == hb else "不一致 —— 输出里混进了非数据的时刻，这是缺陷"))
+    return 0 if ha == hb else 1
 
 
 if __name__ == "__main__":
