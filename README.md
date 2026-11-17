@@ -88,7 +88,7 @@
 先天件   11 份（dsh-innate 入口 + 10 个方向），同一枚指纹 89de2e2de843
 先天名片 10 张（布局 / 插件 / 服务 / 预设 / 端口 / 槽位 / 窗口 / 文档 / 自带skill / 表达）
 后天线   65 个顶层后天件，往下共 77 个节点，每个带 birth 五件套
-锚点     名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚 228 条 ／ 去重对象 180 个（读数，会随种子重投变）
+锚点     名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚 230 条 ／ 去重对象 182 个（读数，会随种子重投变）
 时刻     88 条 birth.at，最早 2026-10-09，最新 2026-11-17
 年轮     5 圈，全在同一枚指纹下
 校验     live.py --check 0 个问题；verify.py 97 项全过；二轮 gen_innate 写出 0 份（收敛）
@@ -175,7 +175,7 @@ python render_seed.py --verify-idempotent  # 自证幂等：连渲染两次比 s
 那不是不幂等，那是数据变了。这也是它该有的样子。
 
 我们这台机器上，用上面第一条命令生成的那一页，顶部统计是
-**节点 88（先天 11 · 后天 77）／名片条目 88／锚 228 条（去重 180 个对象）／断锚 0／空白 0**（读数；种子重投后会变，以脚本当前输出为准）。
+**节点 88（先天 11 · 后天 77）／名片条目 88／锚 230 条（去重 182 个对象）／断锚 0／空白 0**（读数；种子重投后会变，以脚本当前输出为准）。
 
 > 这些数字一律用 `python count_seed.py`（同一目录下）复算，别手抄，也别拿一个口径的数去对另一个口径的数。
 > 四个口径数的是什么、差在哪一条，那个脚本会逐条打出来 —— 见下一节。
@@ -204,7 +204,7 @@ python count_seed.py --json    # 机读的
 `count_seed.py` 会指名道姓打出来。要比就同一个脚本跑两次比，别横着比。
 
 这一台机器上跑出来的结果是
-**名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚 228 条 ／ 去重对象 180 个**（读数；以脚本当前输出为准）。
+**名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚 230 条 ／ 去重对象 182 个**（读数；以脚本当前输出为准）。
 
 种子的价值一半在「记得住」，一半在「看得见」—— **看得见的边界，别人才知道下一步往哪长。**
 
@@ -219,7 +219,7 @@ python count_seed.py --json    # 机读的
 
 **第二层 · 数据已经在，只差一层查询（不是已有功能）**
 
-种子里已经躺着：锚 228 条（口径 C）、88 条 birth、10 张名片、5 圈年轮 —— 要用 `count_seed.py` 复算，别手抄。
+种子里已经躺着：锚 230 条（口径 C）、88 条 birth、10 张名片、5 圈年轮 —— 要用 `count_seed.py` 复算，别手抄。
 下面全是「拿这份现成数据写一个查询」的活，**代码还没写**：
 
 | 想做但还没做 | 数据已经够，缺什么 |
@@ -463,7 +463,7 @@ measured   21,682 files (1,678 unpacked) / 4 presets, 112 rows / 14 upgrade-guid
 innate     11 skills (dsh-innate entry + 10 directions), one shared fingerprint 89de2e2de843
 cards      10 innate cards (layout / plugin / service / preset / port / slot / window / doc / bundled-skill / express)
 acquired   65 top-level acquired artifacts (77 nodes under them), each with the five-part birth label
-anchors    10 card files / 88 card entries carrying anchors / 228 anchors / 180 distinct objects (a reading — changes as the seed is re-projected)
+anchors    10 card files / 88 card entries carrying anchors / 230 anchors / 182 distinct objects (a reading — changes as the seed is re-projected)
 time       88 birth.at stamps, earliest 2026-10-09, latest 2026-11-17
 rings      5 rings, all under the same fingerprint
 verify     live.py --check 0 problems; verify.py 97 checks green; second gen_innate run wrote 0 files
@@ -555,7 +555,7 @@ The precondition matters: idempotence is about **the same seed bytes**. If the s
 or its nodes changed), a different page is correct — that is data changing, not the renderer being non-deterministic.
 
 On our machine, the page from the first command above reports
-**88 nodes (11 innate · 77 acquired) / 88 card entries / 228 anchors (180 distinct objects) / 0 broken / 0 blank** (a reading; the seed re-projects, so take the script's current output as truth).
+**88 nodes (11 innate · 77 acquired) / 88 card entries / 230 anchors (182 distinct objects) / 0 broken / 0 blank** (a reading; the seed re-projects, so take the script's current output as truth).
 
 > Recompute those with `python count_seed.py` (same directory) — do not copy them by hand, and do not compare
 > numbers from different counting conventions. The script prints what each convention counts and where they differ.
@@ -583,7 +583,7 @@ python count_seed.py --json    # machine
 the `card:` block in a `SKILL.md` is the card that skill grew for itself. Both are correct; `count_seed.py` names
 how far they differ and on which node. Compare like with like — same script, two runs.
 
-On this machine: **10 card files / 88 card entries with anchors / 228 anchors / 180 distinct objects** (a reading).
+On this machine: **10 card files / 88 card entries with anchors / 230 anchors / 182 distinct objects** (a reading).
 
 Half the value of a seed is that it *remembers*; the other half is that it *is visible* —
 **a visible edge is what tells the next person where to grow.**
@@ -598,7 +598,7 @@ second run converges.
 
 **Layer 2 — the data is already there, only a query layer is missing (not an existing feature).**
 
-Already sitting in the seed: 228 anchors (convention C), 88 birth records, 10 cards, 5 rings — recompute with
+Already sitting in the seed: 230 anchors (convention C), 88 birth records, 10 cards, 5 rings — recompute with
 `count_seed.py`; do not copy them by hand.
 Everything below is "write a query over data that exists". **The code is not written yet.**
 

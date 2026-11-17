@@ -2,7 +2,9 @@
 /**
  * find.cjs —— 先查种子，不扫盘。
  *
- * 用法：node find.cjs <关键词> [关键词2 …]
+ * 用法：
+ *   node find.cjs <关键词> [关键词2 …]              按关键词定位到「哪个文件#哪一节」
+ *   node find.cjs --get "<skill名>#<节名>"           直接取那一节正文（不用再开文件）
  *
  * 查四类（都来自种子与技能正文，不扫盘）：
  *   ① 后天件名字 / 短名命中      → 谁管的、活没活、在哪
@@ -48,9 +50,140 @@ const SKILL_ROOT = path.join(ASSETS, '技能')
 const SEED = path.join(SKILL_ROOT, 'dsh-seed', 'seed.json')
 const LOG = path.join(STATE, '查询日志.jsonl')
 
-const words = process.argv.slice(2).filter((w) => w && !w.startsWith('--'))
+/* ---------------- --get：按「名#节」取一节正文 ---------------- */
+
+const HEAD_RE = /^##\s+(.+?)\s*$/gm
+/** 去括号注解与空白，供宽容比较：端口 → 端口表（agent 工具） */
+const loose = (s) => String(s || '')
+  .replace(/（[^）]*）/g, '').replace(/\([^)]*\)/g, '').replace(/\s+/g, '').toLowerCase()
+
+function runGet(spec) {
+  const raw = String(spec || '')
+  const i = raw.indexOf('#')
+  if (i < 0) return { ok: false, msg: '格式：--get "<skill名>#<节名>"（中间要有一个 #）' }
+  const wantSkill = raw.slice(0, i).trim()
+  const wantSec = raw.slice(i + 1)
+
+  let dirs = []
+  try {
+    dirs = fs.readdirSync(SKILL_ROOT, { withFileTypes: true })
+      .filter((d) => d.isDirectory()).map((d) => d.name)
+  } catch { return { ok: false, msg: `读不到技能根：${SKILL_ROOT}` } }
+
+  let dir = dirs.includes(wantSkill) ? wantSkill : null
+  let fuzzy = false
+  if (!dir) {
+    const hits = dirs.filter((d) => d.toLowerCase().includes(wantSkill.toLowerCase()))
+    if (hits.length === 1) { dir = hits[0]; fuzzy = true }
+    else if (hits.length > 1) return { ok: false, msg: `skill 名「${wantSkill}」命中多个：${hits.join(', ')}（写全名）` }
+    else return { ok: false, msg: `没有这个 skill：「${wantSkill}」` }
+  }
+
+  const p = path.join(SKILL_ROOT, dir, 'SKILL.md')
+  let txt
+  try { txt = fs.readFileSync(p, 'utf8') } catch { return { ok: false, msg: `读不到 ${p}` } }
+
+  const heads = []
+  HEAD_RE.lastIndex = 0
+  let m
+  while ((m = HEAD_RE.exec(txt))) heads.push({ t: m[1].trim(), i: m.index })
+  if (!heads.length) return { ok: false, msg: `${dir} 的 SKILL.md 没有 ## 节` }
+
+  const q = loose(wantSec)
+  if (!q) return { ok: false, msg: '没给节名' }
+  let hit = heads.find((h) => h.t === String(wantSec).trim()) || heads.find((h) => loose(h.t) === q)
+  let others = []
+  if (!hit) {
+    const starts = heads.filter((h) => loose(h.t).startsWith(q))
+    const inc = heads.filter((h) => loose(h.t).includes(q))
+    const cand = starts.length ? starts : inc
+    if (!cand.length) {
+      return {
+        ok: false,
+        msg: `${dir} 没有「${wantSec}」这一节。它实际有这些节：\n` +
+          heads.map((h) => `  · ${h.t}`).join('\n'),
+      }
+    }
+    hit = cand[0]
+    others = cand.slice(1).map((h) => h.t)
+  }
+
+  const after = hit.i + `## ${hit.t}`.length
+  const rest = txt.slice(after)
+  const nx = rest.search(/^##\s+/m)
+  let body = (nx < 0 ? rest : rest.slice(0, nx)).replace(/^\s*\n/, '').replace(/\s+$/, '')
+
+  // 本节正文是原文取出来的，里面可能带着**这一台机器**的绝对落点。
+  // 原样打印，别人复制这行命令去跑必然不对（他机器上没有这个目录）。
+  // 所以只把「本机 ASSETS」这一层换成 <ASSETS> 占位：仍看得出结构，又不指死本机。
+  // 判据是「这一层的绝对路径」，不是随便一个盘符路径 —— 别的盘符路径是别人正文里的事实，不归这里改。
+  body = maskAssets(body)
+
+  const note = []
+  if (fuzzy) note.push(`skill 名按包含匹配到 ${dir}`)
+  if (others.length) note.push(`另有相近节：${others.join(' / ')}`)
+  return { ok: true, dir, title: hit.t, body, note }
+}
+
+/** 把正文里出现的本机 ASSETS 绝对落点换成 <ASSETS>（两种分隔符都认）。
+ *
+ * 两条判据，缺一个就会错：
+ *   后面必须是分隔符或边界 —— 否则 D:\a\b 会把 D:\a\bc 也啃掉一半；
+ *   但**正好等于资产根**那一处要换（行尾、空白、引号、反引号后面都算边界）。
+ * 只换这一层，别的盘符 / 别的用户目录一律原样保留：那些是别人正文里的事实，不归这里改。
+ */
+function maskAssets(s) {
+  if (!s) return s
+  const forms = new Set([ASSETS, ASSETS.split(path.sep).join('/')])
+  let out = s
+  for (const f of forms) {
+    if (!f) continue
+    const esc = f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    // 后面紧跟分隔符 → 深路径；(?!\w) 拦住 a\bc 这种同前缀不同目录
+    const re = new RegExp(esc + '(?=$|[\\\\/]|(?!\\w))', 'g')
+    out = out.replace(re, '<ASSETS>')
+  }
+  return out
+}
+
+const argvAll = process.argv.slice(2)
+
+if (argvAll.includes('--get')) {
+  const gi = argvAll.indexOf('--get')
+  const spec = argvAll[gi + 1]
+  if (!spec) {
+    console.log('用法：node find.cjs --get "<skill名>#<节名>"')
+    console.log(`当前 ASSETS = ${ASSETS}`)
+    process.exit(2)
+  }
+  const t1 = Date.now()
+  const res = runGet(spec)
+  if (!res.ok) {
+    console.log(res.msg)
+    try {
+      fs.mkdirSync(STATE, { recursive: true })
+      fs.appendFileSync(LOG, JSON.stringify({ 取节: spec, 命中: false, 耗时ms: Date.now() - t1, 时刻: new Date().toISOString() }) + '\n')
+    } catch { /* 记账失败不影响查找 */ }
+    process.exit(1)
+  }
+  // 干净输出：只给那一节正文；提示走 stderr，不污染正文
+  if (res.note.length) console.error(`# ${res.dir} 「${res.title}」 （${res.note.join('；')}）`)
+  console.log(res.body)
+  try {
+    fs.mkdirSync(STATE, { recursive: true })
+    fs.appendFileSync(LOG, JSON.stringify({
+      取节: spec, 命中: true, skill: res.dir, 节: res.title, 字节: res.body.length,
+      耗时ms: Date.now() - t1, 时刻: new Date().toISOString(),
+    }) + '\n')
+  } catch { /* 记账失败不影响查找 */ }
+  process.exit(0)
+}
+
+const words = argvAll.filter((w) => w && !w.startsWith('--'))
 if (words.length === 0) {
-  console.log('用法：node find.cjs <关键词> [更多关键词…]')
+  console.log('用法：')
+  console.log('  node find.cjs <关键词> [更多关键词…]            # 定位到「哪个文件#哪一节」')
+  console.log('  node find.cjs --get "<skill名>#<节名>"           # 直接取那一节正文')
   console.log(`当前 ASSETS = ${ASSETS}`)
   process.exit(2)
 }
