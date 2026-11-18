@@ -134,8 +134,15 @@
 连缺什么都一起长出来了：那条链还没有查询器、地址仍写死在五个脚本里、也没有年轮账。
 缺件写清楚反而是更强的证据：方法真能换本体，空白自己站在树上。
 
-至于 `jar` / npm / docker / 模块图 —— 它们**仍然是方向，不是已实现**。第二个真实例证明的是
-「方法能换本体」，不是「任意本体都自动成立」；能不能长，取决于它的形状能不能被量出来（尺子贴着对象造）。
+而且它不只横着换本体，还能**纵向长**：DSH 的种子里有个后天件 `obsidian`，
+那个场自己又是完整的一棵树（Obsidian 先天 → 5 名片 → `seed-obsidian` 8 后天件），
+里面又长出一个后天件 `Blender`，Blender 自己又是一棵（5 名片 → `seed-blender` 6 后天件，校验全绿 35 项）。
+**一颗种子里长出下一颗种子** —— 两层树靠锚/路径缝合（下层不是上层节点里的 `孩子`，上层那个节点 `孩子` 是空的）。
+下层账一动，上层盯着它的名片当场红（实测 `obsidian 名片对象变了`）—— 报警跨层生效。
+这才是「种子长种子」：一套结构能在一个系统里递归地一层层长下去。长到第三层是当前实际形状，不是无限递归。
+
+至于 `jar` / npm / docker / 模块图 —— 它们**仍然是方向，不是已实现**。真实例证明的是
+「方法能换本体、能往纵深长」，不是「任意本体都自动成立」；能不能长，取决于它的形状能不能被量出来（尺子贴着对象造）。
 
 ### 五 · 怎么把它展示出来
 
@@ -541,9 +548,17 @@ And on the second object it also grew its own gaps: that chain has no query tool
 still hard-coded in five scripts, and there is no tree-ring ledger. Naming the gaps is the stronger
 evidence — the method really transfers, and the empty places show up on the tree by themselves.
 
-`jar` / npm / docker / module graph remain **directions, not shipped**. A second real example proves
-"the method transfers to another object", not "any object works automatically". Whether one grows depends
-on whether its shape can be measured — the ruler is built against the object.
+And it grows **vertically** too: the DSH seed has an acquired artifact `obsidian`; that field is itself
+a whole tree (Obsidian innate → 5 cards → `seed-obsidian` with 8 acquired artifacts), inside which grows
+`Blender`, itself another tree (5 cards → `seed-blender` with 6 acquired artifacts, 35 checks green).
+**One seed grows the next seed.** The two trees are stitched by anchors / paths — the lower tree is not a
+`child` of the upper node (that node's `children` is empty). When the lower ledger changes, the upper card
+watching it flips red (measured: `obsidian card object changed`) — the alarm crosses layers. That is what
+"seed grows seed" means. Three layers is the actual shape here, not infinite recursion.
+
+`jar` / npm / docker / module graph remain **directions, not shipped**. The real examples prove
+"the method transfers to another object and grows deeper", not "any object works automatically". Whether
+one grows depends on whether its shape can be measured — the ruler is built against the object.
 
 ### 5 · How to show it
 
