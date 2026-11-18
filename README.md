@@ -8,6 +8,10 @@
 
 **这一份实现跑在 DSH 上，它是范例，不是产品，不是标准答案，更不是上限。**
 
+> **发布件**：这份 README 是对外发布物（GitHub `fjshoumeng/seed-lineage`），**不是本机的能力件**。
+> 里面所有数字都是**发布那一刻（2026-11-18）**在作者那台机器上量出来的读数，
+> 不跟任何一台机器当下的种子对账 —— 要你自己的数，跑 `count_seed.py` / `verify.py`。
+
 **[中文](#中文) | [English](#english)**
 
 ---
@@ -82,6 +86,7 @@
 ### 四 · 范例：跑在 DSH 上（实测数字）
 
 这一节是**一台机器的实测账**，摆出来为了证明「这四个动作真能跑起来」，不是为了当标准答案。
+读数取到 2026-11-18（发布那一刻）—— 之后本机的种子重投过多少次，这里的数都不跟着变。
 
 ```
 对象     DSH 桌面版 0.2.2-rc.2，app.asar 208,137,981 字节，sha256 49fd1b08…
@@ -89,17 +94,18 @@
 先天件   11 份（dsh-innate 入口 + 10 个方向），同一枚指纹 89de2e2de843
 先天名片 10 张（布局 / 插件 / 服务 / 预设 / 端口 / 槽位 / 窗口 / 文档 / 自带skill / 表达）
 后天线   65 个顶层后天件，往下共 77 个节点，每个带 birth 五件套
-锚点     名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚条数、去重对象数均以 count_seed.py 当前输出为准（读数，会随种子重投变）
+锚点     名片库 10 张 ／ 带锚的名片条目 88 条 ／ 锚条数 226（当日按 frontmatter 口径数的，
+         与种子口径 C 不是一个数 —— 两种数法的对照见第五节「口径」）
 时刻     88 条 birth.at，最早 2026-10-09，最新 2026-11-17
 年轮     5 圈，全在同一枚指纹下
 校验     live.py --check 0 个问题；verify.py 97 项全过；二轮 gen_innate 写出 0 份（收敛）
 ```
 
-> **上面「锚点」那行的四个数请一律用 `python count_seed.py` 复算，不要手抄、不要拿一个口径的数去对另一个口径的数。**
-> 这四个数是四种数法：名片库文件（磁盘上的 .md）／带锚的名片条目（种子里锚列表非空的条数）／
-> 锚条数（逐条相加，同一个文件被两个件盯就算两条）／去重对象（path 去重后）。
-> 还有一个第六个数「SKILL.md frontmatter 的 looks_at 条数」直接读文件、不读种子，它和种子口径**不是同一份数据**，
-> 差多少、差在哪个节点，`count_seed.py` 会逐条打出来。口径写死在那个脚本里，改了数就跟着变。
+> **「锚点」那行是三种数法，别拿一个口径的数去对另一个口径的数**：名片库文件（磁盘上的 `.md`）／
+> 带锚的名片条目（种子里锚列表非空的条数）／锚条数（逐条相加，同一个文件被两个件盯就算两条）。
+> 第三格记的 226 是当日按 **frontmatter 口径**（`looks_at` 条数，直接读文件、不读种子）数出来的，
+> 与种子口径 C **不是同一份数据** —— 差几条、差在哪个节点，`count_seed.py` 会逐条指名道姓打出来。
+> 真值一律以它当时的输出为准；写进文档的数就只是**一次读数**。
 
 | 步骤 | 输出 |
 |:--|:--|
@@ -254,7 +260,8 @@ python count_seed.py --json    # 机读的
 
 **第二层 · 数据已经在，只差一层查询（不是已有功能）**
 
-种子里已经躺着：锚条数与去重对象数均以 count_seed.py 当前输出为准（口径 C）、88 条 birth、10 张名片、5 圈年轮 —— 要用 `count_seed.py` 复算，别手抄。
+种子里已经躺着（括号里是 **2026-11-18 发布时的读数**；本机的数一律 `count_seed.py` 现算，别手抄）：
+名片库 10 张、带锚的名片条目 88 条、锚条数 226、88 条 `birth.at`、5 圈年轮。
 下面全是「拿这份现成数据写一个查询」的活，**代码还没写**：
 
 | 想做但还没做 | 数据已经够，缺什么 |
@@ -425,6 +432,11 @@ upkeep, because it flips red the moment its object changes.
 
 **This implementation runs on DSH. It is an example — not a product, not the reference answer, and not the ceiling.**
 
+> **Published artifact**: this README is a published deliverable (GitHub `fjshoumeng/seed-lineage`), **not a capability
+> artifact of any local install**. Every number here is a reading taken on the author's machine **at publish time
+> (2026-11-18)** and is never reconciled against the seed of whatever machine you are on now — for your own numbers,
+> run `count_seed.py` / `verify.py`.
+
 ### 1 · This is a capability, not a product
 A seed is not a doc template. It is four actions:
 
@@ -493,6 +505,7 @@ different harness — see Limits.
 ### 4 · Example: what it looks like running on DSH (measured)
 
 This is the measured ledger of **one machine**, shown to prove the four actions actually run — not as a reference answer.
+The reading is taken at 2026-11-18 (publish time): however often the local seed is re-projected afterwards, these numbers stay put.
 
 ```
 object     DSH desktop 0.2.2-rc.2, app.asar 208,137,981 bytes, sha256 49fd1b08…
@@ -500,18 +513,19 @@ measured   21,682 files (1,678 unpacked) / 4 presets, 112 rows / 14 upgrade-guid
 innate     11 skills (dsh-innate entry + 10 directions), one shared fingerprint 89de2e2de843
 cards      10 innate cards (layout / plugin / service / preset / port / slot / window / doc / bundled-skill / express)
 acquired   65 top-level acquired artifacts (77 nodes under them), each with the five-part birth label
-anchors    10 card files / 88 card entries carrying anchors / anchor count and distinct objects: take from count_seed.py (a reading — changes as the seed is re-projected)
+anchors    10 card files / 88 card entries carrying anchors / 226 anchors (counted that day by the frontmatter
+           convention, which is not the same number as seed convention C — see "conventions" in section 5)
 time       88 birth.at stamps, earliest 2026-10-09, latest 2026-11-17
 rings      5 rings, all under the same fingerprint
 verify     live.py --check 0 problems; verify.py 97 checks green; second gen_innate run wrote 0 files
 ```
 
-> **The four numbers on the `anchors` line must be recomputed with `python count_seed.py` — never copied by hand,
-> and never compared across different counting conventions.** The four are four ways of counting: card files on disk /
-> card entries whose anchor list is non-empty / anchors summed one by one (the same file watched by two artifacts
-> counts twice) / distinct objects after de-duplicating paths. A sixth number — `looks_at` entries read straight from
-> `SKILL.md` frontmatter instead of from the seed — is **not the same data**; `count_seed.py` prints exactly how far
-> the two conventions differ and on which node. The conventions are written into that script, not into this table.
+> **The `anchors` line holds three ways of counting — never compare one convention against another.** Card files on
+> disk / card entries whose anchor list is non-empty / anchors summed one by one (the same file watched by two artifacts
+> counts twice). The 226 in the third slot was counted that day by the **frontmatter convention** (`looks_at` entries
+> read straight from `SKILL.md`, not from the seed) and is **not the same data** as seed convention C; `count_seed.py`
+> prints exactly how far the two differ and on which node. Take the true value from that script's output at the time —
+> a number written into a doc is only one reading.
 
 | Step | Output |
 |:--|:--|
@@ -672,8 +686,9 @@ second run converges.
 
 **Layer 2 — the data is already there, only a query layer is missing (not an existing feature).**
 
-Already sitting in the seed: anchors per count_seed.py (convention C), 88 birth records, 10 cards, 5 rings — recompute with
-`count_seed.py`; do not copy them by hand.
+Already sitting in the seed (in brackets, the **reading at publish time, 2026-11-18**; recompute your own with
+`count_seed.py`, never copy them by hand): 10 card files, 88 card entries carrying anchors, 226 anchors,
+88 `birth.at` records, 5 rings.
 Everything below is "write a query over data that exists". **The code is not written yet.**
 
 | Wanted but not built | Data is enough; what is missing |

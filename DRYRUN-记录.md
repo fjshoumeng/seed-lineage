@@ -140,3 +140,26 @@ python publish_skill.py D:\DSH-本地插件包\外部技能\seed-lineage --dry-r
 本次把它从提交里排除（只提交本任务自己的改动），提交后原样放回工作区 —— 那条改动仍未提交，归它自己的活收口。
 
 
+
+## 追记（2026-11-18 · 发布件身份与读数时点）
+
+改动范围：`SKILL.md`（frontmatter 加两行、标题下一段「发布件」声明、范例与上限第二层两处数字改成带时点的读数、
+生长记录追加一条）、`README.md`（中英各加「发布件」声明，范例与第六层第二层的数字同口径改写）。
+`scripts/` 一个字节没改；`LICENSE` 未动；正文里的章节结构没动（重讲那一版已经把四节写齐了）。
+
+这次的判断依据（逐条查过，不是推的）：本机能力件在 `技能/` 下、进 `技能/dsh-seed/seed.json`、归
+`工具/dsh-skillmap/verify.py` 管；`paths.py` 里 `SKILL_ROOT = 资产区/技能`，`verify.py` 第 7 组「加载面」
+正是拿这一层做判据，全文件不出现 `外部技能` 字样；`seed.json` 里 `seed-lineage` 出现 0 次。
+所以它本来就不参与本机种子对账 —— 这次加 `publish_artifact: true` 与正文声明，是把「不参与」写明白。
+
+dry-run（`PYTHONUTF8=1` + 前置 `which.cmd` + 显式 `--github-user fjshoumeng`）：
+
+```
+python publish_skill.py D:\DSH-本地插件包\外部技能\seed-lineage --dry-run --github-user fjshoumeng --repo-name seed-lineage
+✅ SKILL.md 验证通过 (name: seed-lineage)   ✅ gh CLI 已就绪   ✅ GitHub 用户: fjshoumeng
+✅ GitHub 仓库名: seed-lineage              ✅ LICENSE 已存在  ✅ README.md 已存在
+✅ README 质量检查通过                      🏁 Dry run 完成，退出码 0
+```
+
+一处操作留痕：提交前工作区仍有那 12 行「方法类判据 = 有没有一句总述」的未提交改动（不是本任务的），
+本次先 `git stash push -- SKILL.md` 把它摘出去，只提交本任务的改动，推完再 `git stash pop` 原样放回。
