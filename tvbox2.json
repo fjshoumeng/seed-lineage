@@ -1,0 +1,8 @@
+{
+  "lives": [{"name":"已验证","type":"txt","url":"https://cdn.jsdelivr.net/gh/fjshoumeng/seed-lineage@main/v.m3u","player":"exo"}],
+  "sites": [
+    {"key":"hongniu","name":"红牛影视","type":1,"api":"https://www.hongniuzy2.com/api.php/provide/vod/","searchable":1,"quickSearch":1,"filterable":1},
+    {"key":"guangsu","name":"光速影视","type":1,"api":"https://api.guangsuapi.com/api.php/provide/vod/","searchable":1,"quickSearch":1,"filterable":1},
+    {"key":"hhzy","name":"豪华影视","type":1,"api":"https://hhzyapi.com/api.php/provide/vod/","searchable":1,"quickSearch":1,"filterable":1}
+  ]
+}
